@@ -1,0 +1,34 @@
+// This is the Prisma schema file, created by (npx prisma init) .. for SQL DBs, we use migrate to create the tables
+//unlike mongoDB, PosgreSQL needs hosting, here we using vercel/postgres 
+
+generator client {
+  provider = "prisma-client-js"
+  previewFeatures = ["driverAdapters"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+
+//Product model
+model Product {
+  //`@id` - Marks field as a primary key of the table in the db, `@default(dbgenerated("gen_random_uuid()"))` - generates a random uuid for the id field
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid    
+  name        String
+  //`@unique(map: "product_slug_idx")` - Adds a unique constraint on the field & assigns a custom name (product_slug_idx) to the db index created for this constraint. Without map, it would generate a default name.
+  slug        String   @unique(map: "product_slug_idx")
+  category    String
+  images      String[]
+  brand       String
+  description String
+  stock       Int
+  //`@db.Decimal(12, 2)` maps the price field to a decimal type with precision 12 (total digits) and scale 2 (digits after the decimal point)
+  price       Decimal  @default(0) @db.Decimal(12, 2)
+  rating      Decimal  @default(0) @db.Decimal(3, 2)
+  numReviews  Int      @default(0)
+  isFeatured  Boolean  @default(false)     //`@default()` - Specifies a default value for a field when a new record is created & no value is explicitly provided.
+  banner      String?
+  createdAt   DateTime @default(now()) @db.Timestamp(6)       //6 digits of Milliseconds - more precision than the default 3 digits
+}
