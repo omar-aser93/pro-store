@@ -4,9 +4,17 @@ import sampleData from './sample-data';
 
 async function main() {
   const prisma = new PrismaClient();                   // Create a PrismaClient instance
-  await prisma.product.deleteMany();                   // Delete all prev products in the db
+ 
+  // Delete/clean all prev products/users in the db models before seeding the sample data
+  await prisma.product.deleteMany();   
+  await prisma.account.deleteMany();
+  await prisma.session.deleteMany();
+  await prisma.verificationToken.deleteMany();
+  await prisma.user.deleteMany();
+
   //createMany method to seed the sample data to the database, then log a success message
   await prisma.product.createMany({ data: sampleData.products });
+  await prisma.user.createMany({ data: sampleData.users });
   console.log('Database seeded successfully');
 }
 

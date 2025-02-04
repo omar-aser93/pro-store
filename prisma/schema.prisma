@@ -1,5 +1,6 @@
 // This is the Prisma schema file, created by (npx prisma init) .. for SQL DBs, we use migrate to create the tables
-//unlike mongoDB, PosgreSQL needs hosting, here we using vercel/postgres 
+//unlike mongoDB, PosgreSQL needs hosting, here we using vercel/postgres based on Neon 
+//User-Related Models: User, Account, Session, VerificationToken .. are based on the NextAuth.js schema (https://authjs.dev/getting-started/adapters/prisma)
 
 generator client {
   provider = "prisma-client-js"
@@ -31,4 +32,68 @@ model Product {
   isFeatured  Boolean  @default(false)     //`@default()` - Specifies a default value for a field when a new record is created & no value is explicitly provided.
   banner      String?
   createdAt   DateTime @default(now()) @db.Timestamp(6)       //6 digits of Milliseconds - more precision than the default 3 digits
+}
+
+
+//User model
+model User {
+  //`@id` - Marks field as a primary key of the table in the db, `@default(dbgenerated("gen_random_uuid()"))` - generates a random uuid for the id field
+  id            String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name          String    @default("NO_NAME")
+  //`@unique(map: "user_email_idx")` - Adds a unique constraint on the field & assigns a custom name (user_email_idx) to the db index created for this constraint. Without map, it would generate a default name.
+  email         String    @unique(map: "user_email_idx")
+  password      String?                               //`?` - optional because we may login with Oauth, something like Google or Github & there will be no password.
+  role          String    @default("user")
+  emailVerified DateTime? @db.Timestamp(6)            //6 digits of Milliseconds - more precision than the default 3 digits
+  image         String?
+  address       Json?     @db.Json
+  paymentMethod String?
+  createdAt     DateTime  @default(now()) @db.Timestamp(6)
+  updatedAt     DateTime  @updatedAt
+  account       Account[]               //one-to-many relation with Account model (one user can have multiple accounts)              
+  session       Session[]               //one-to-many relation with Session model (one user can have multiple sessions)
+}
+
+
+//User's Account model
+model Account {
+  userId            String  @db.Uuid               // a foreign key 
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+  createdAt DateTime @default(now()) @db.Timestamp(6)
+  updatedAt DateTime @updatedAt
+  //relation to User model: Account model (userId) field will reference to User model (id) field , onDelete: Cascade - if a user is deleted, all the accounts associated with that user will also be deleted
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  //primary key for Account. It is a composite primary key made of the `provider` & `providerAccountId` fields. In many OAuth systems, the combination of the provider (e.g., Google, GitHub) and the providerAccountId (the user's ID from the provider) is guaranteed to be unique, it makes sense to use this as a primary key. Having a separate id field would be redundant.
+  @@id([provider, providerAccountId])
+}
+
+
+//User's Session model
+model Session {
+  sessionToken String   @id                      //`@id` - Marks field as a primary key of the table in the db
+  userId       String   @db.Uuid                 // a foreign key 
+  expires      DateTime @db.Timestamp(6)
+  //relation to User model: Session model (userId) field will reference to User model (id) field , onDelete: Cascade - if a user is deleted, all the sessions associated with that user will also be deleted
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now()) @db.Timestamp(6)
+  updatedAt DateTime @updatedAt
+}
+
+
+//VerificationToken model
+model VerificationToken {
+  identifier String
+  token      String
+  expires    DateTime
+  //the primary key for verificationToken model. It is a composite primary key made up of the `identifier` and `token` fields
+  @@id([identifier, token])
 }
