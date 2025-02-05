@@ -22,7 +22,7 @@ export async function signInWithCredentials(prevState: unknown, data: signInType
 
 // Sign the user out server-action
 export async function signOutUser() {
-    await signOut();                       //Next_Auth signOut() function
+    await signOut({redirect: true});                       //Next_Auth signOut() function    
 }
 
 

@@ -27,8 +27,7 @@ const CredentialsSignInForm = () => {
   const { register, handleSubmit, formState: { errors } }  = useForm<signInType>({ resolver: zodResolver(signInFormSchema) })
 
   //function to handle "react-hook-form" submit
-  const onSubmit = (values: signInType) => {  
-    console.log(values);   
+  const onSubmit = (values: signInType) => {       
     startTransition(() => { action(values); });       //pass the data to the server_action & startTransition to allow pending state 
   }
   return (
