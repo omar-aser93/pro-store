@@ -6,6 +6,7 @@ import { auth } from "@/auth";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import CredentialsSignInForm from './credentials-signin-form';
 
+
 //set page title to "Sign In"
 export const metadata: Metadata = {
   title: "Sign In",
@@ -14,9 +15,9 @@ export const metadata: Metadata = {
 
 //SignIn page - we check callbackUrl from searchParams, callback URL is the page that user was at before signing in, so we can redirect him to it again 
 const SignIn = async ( props: { searchParams: Promise<{ callbackUrl: string }> }) => {
-
+  
   const { callbackUrl } = await props.searchParams;       //get callbackUrl from searchParams (in a server component)
-
+  
   //check if user is already signed in with Next_Auth session from auth(), then redirect to the callbackUrl or "/"
   const session = await auth();
   if (session) { return redirect(callbackUrl || '/') }

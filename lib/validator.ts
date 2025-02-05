@@ -16,7 +16,7 @@ export const insertProductSchema = z.object({
   price: z.string().refine(
     (value) => /^\d+(\.\d{2})?$/.test(formatNumberWithDecimal(Number(value))), 'Price must have exactly two decimal places (e.g., 49.99)'),
 });
-//We use `z.infer` to create a product TS type and include all the fields from the validator + other fields not included in the form
+//We use `z.infer` to create a product TS type & include all fields of the Schema + other fields not included in the form
 export type Product = z.infer<typeof insertProductSchema> & { 
     id: string; 
     createdAt: Date; 
@@ -30,6 +30,8 @@ export const signInFormSchema = z.object({
   email: z.string().email('Invalid email address').min(3, 'Email must be at least 3 characters'),
   password: z.string().min(3, 'Password must be at least 3 characters'),
 });
+//We use `z.infer` to create a signIn TS type & include all fields of the Schema + callbackUrl(hidden field we need) in the form
+export type signInType = z.infer<typeof signInFormSchema> & { callbackUrl: string };
 
 
 // Schema for signing up a user
@@ -41,3 +43,5 @@ export const signUpFormSchema = z.object({
   confirmPassword: z.string().min(3, "Confirm password must be at least 3 characters") })
     .refine((data) => data.password === data.confirmPassword, { message: "Passwords don't match", path: ["confirmPassword"]
 });
+//We use `z.infer` to create a signUp TS type & include all fields of the Schema + callbackUrl(hidden field we need) in the form
+export type signUpType = z.infer<typeof signUpFormSchema> & { callbackUrl: string };
