@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter } from 'next/font/google';
 import { ThemeProvider } from 'next-themes';       //next-themes lib for light/dark mode, we wrap the provider around the children 
+import { Toaster } from '@/components/ui/toaster';    //shadcn Toaster, we add it under the children 
 import "./globals.css";
 
 
@@ -20,6 +21,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
       <body className={`${inter.className}`} >
         <ThemeProvider attribute='class' defaultTheme='light' enableSystem disableTransitionOnChange >
           {children}
+          <Toaster />
         </ThemeProvider>
       </body>
     </html>

@@ -2,9 +2,10 @@ import { notFound } from 'next/navigation';      //get not-found.tsx we created,
 import ProductPrice from '@/components/shared/product/product-price';
 import { getProductBySlug } from '@/lib/actions/product.actions';
 import ProductImages from '@/components/shared/product/product-images';
+import AddToCart from '@/components/shared/product/add-to-cart';
+import { getMyCart } from '@/lib/actions/cart.actions';
 //shadcn components
 import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 
 
@@ -15,6 +16,7 @@ const ProductDetailsPage = async (props: { params: Promise<{ slug: string }> }) 
   const product = await getProductBySlug(slug);       //pass product slug to getProductBySlug() server-action
   if (!product) notFound();                           //if product not found, return the not-found.tsx page we created
 
+  const cart = await getMyCart();                     //get user's cart using getMyCart() server-action
   return (
     <>
       <section>
@@ -58,8 +60,10 @@ const ProductDetailsPage = async (props: { params: Promise<{ slug: string }> }) 
                   <div>Status</div>
                   {product.stock > 0 ? (<Badge variant='outline'>In stock</Badge>) : (<Badge variant='destructive'>Unavailable</Badge>)}
                 </div>
-                {/*if product is in stock, show Add_to_cart button */}
-                {product.stock > 0 && (<div className=' flex-center'><Button className='w-full'>Add to cart</Button></div>)}
+                {/*if product is in stock, show Add_to_cart component & pass product details as props */}
+                {product.stock > 0 &&(<div className=' flex-center'>
+                   <AddToCart cart={cart} item={{ productId: product.id, name: product.name, slug: product.slug, price: product.price, qty: 1, image: product.images![0] }} />
+                </div>)}
               </CardContent>
             </Card>
           </div>
