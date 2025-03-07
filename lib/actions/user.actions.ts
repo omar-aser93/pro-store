@@ -4,8 +4,8 @@ import { isRedirectError } from 'next/dist/client/components/redirect-error';   
 import { auth, signIn, signOut } from '@/auth';           //import the signIn and signOut functions from auth.ts
 //import zod Schemas/types from validator.ts
 import { paymentMethodSchema, paymentMethodType, shippingAddressSchema, shippingAddressType, signInType, signUpType} from '../validator';     
-import { hashSync } from 'bcrypt-ts-edge';                //hashing library
-import { prisma } from '@/db/prisma';                     //import the Prisma client from prisma.ts, the file we created
+import { hash } from '../encrypt';                   //hashing using function we manually created (encrypt.ts file)
+import { prisma } from '@/db/prisma';                //import the Prisma client from prisma.ts, the file we created
 
 
 // Sign in the user with email/password server-action
@@ -36,8 +36,8 @@ export async function signUp(prevState: unknown, data: signUpType) {
     if (isExists) { return { success: false, message: 'User already exists' }; }
 
     const plainPassword = data.password;              //store the password before hashing (Next_Auth login doesn't take hashed passwords)
-    data.password = hashSync(data.password, 10);      //hash the password
-
+    data.password = await hash(data.password);        //hash the password
+    
     //create the user in the db using Prisma (with the data we recieved & hashed password)
     await prisma.user.create({ data: { name: data.name, email: data.email, password: data.password } });
 

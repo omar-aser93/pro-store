@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { compareSync } from 'bcrypt-ts-edge';        //compareSync to compare the db password with the form password  
+import { compare } from './lib/encrypt';             //to compare db password with the form password (manually created function)
 import type { NextAuthConfig } from 'next-auth';     //TS type for the Next Auth configuration
 import NextAuth from 'next-auth';                    
 import CredentialsProvider from 'next-auth/providers/credentials';   //provider to authenticate users. This just email/password. There are many other providers , such as Google, Facebook, Twitter, etc.
@@ -23,7 +23,7 @@ export const config = {
         const user = await prisma.user.findFirst({ where: { email: credentials.email as string }});  
         // Check if user & his password exists, then check if the password in db matches the form submitted password
         if (user && user.password) {
-          const isMatch = compareSync( credentials.password as string, user.password );
+          const isMatch = await compare( credentials.password as string, user.password );          
           // If password is correct, return the user object for the session
           if (isMatch) {
             return {

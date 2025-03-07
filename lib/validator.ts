@@ -137,3 +137,14 @@ export const insertOrderItemSchema = z.object({
 });
 //We use `z.infer` to create an OrderItem TS type
 export type OrderItem = z.infer<typeof insertOrderItemSchema>;
+
+
+//Zod Schema for paypal payment result
+export const paymentResultSchema = z.object({
+  id: z.string(),
+  status: z.string(),
+  email_address: z.string(),
+  pricePaid: z.string(),
+});
+//We use `z.infer` to create a paymentResult TS type
+export type paymentResultType = z.infer<typeof paymentResultSchema>;
