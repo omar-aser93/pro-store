@@ -15,14 +15,14 @@ export default auth((req) => {
     return NextResponse.redirect(new URL('/sign-in', req.url));
   }
 
-  //when a user visits the app, Check for sessionCartId cookie .. if exists, return true, if not found -> create a new one
-   const sessionCartId = req.cookies.get('sessionCartId')?.value;
-   if (!sessionCartId) {
-     // Create a new response and set the sessionCartId cookie
-     const response = NextResponse.next();
-     response.cookies.set('sessionCartId', crypto.randomUUID());
-     return response;
-   }
+//   //when a user visits the app, Check for sessionCartId cookie .. if exists, return true, if not found -> create a new one
+//    const sessionCartId = req.cookies.get('sessionCartId')?.value;
+//    if (!sessionCartId) {
+//      // Create a new response and set the sessionCartId cookie
+//      const response = NextResponse.next();
+//      response.cookies.set('sessionCartId', crypto.randomUUID());
+//      return response;
+//    }
 
   return NextResponse.next();
 });
