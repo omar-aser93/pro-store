@@ -1,12 +1,14 @@
 'use server';
 
 import { isRedirectError } from 'next/dist/client/components/redirect-error';   //`isRedirectError` function used to check if error is a redirect error
+import { revalidatePath } from 'next/cache';            //used to revalidate the cache of a specific path (we use it with POST/PUT/DELETE actions)
 import { auth } from '@/auth';
 import { getMyCart } from './cart.actions';
 import { getUserById } from './user.actions';
-import { cartItemType, insertOrderSchema } from '../validator';           //import zod Schemas/types from validator.ts
+import { cartItemType, insertOrderSchema, paymentResultType } from '../validator';           //import zod Schemas/types from validator.ts
 import { prisma } from '@/db/prisma';
 import { convertToPlainObject } from '../utils';            //utility function to convert Prisma objects to plain js objects
+import { paypal } from '../paypal';
 
 
 // Create an order server-action
@@ -79,3 +81,49 @@ export async function getOrderById(orderId: string) {
   });
   return convertToPlainObject(data);             //res with all of the order's info
 }
+
+
+
+// Create a Paypal Order server-action, receives the order id and creates a paypal order
+export async function createPayPalOrder(orderId: string) {
+  try {    
+    const order = await prisma.order.findFirst({ where: { id: orderId } });      //Get the order by id from the DB
+    if (order) {      
+      const paypalOrder = await paypal.createOrder(Number(order.totalPrice));    //Create a paypal order using paypal.createOrder()
+      //Update the order with the paypal order id
+      await prisma.order.update({ where: { id: orderId }, data: { paymentResult: { id: paypalOrder.id, email_address: '', status: '', pricePaid: '0',  }} });
+      // Return the paypal order id & success message
+      return { success: true, message: 'PayPal order created successfully', data: paypalOrder.id };
+    } else {
+      throw new Error('Order not found');             //if order not found throw an error
+    }
+  } catch {
+    return { success: false, message: "Something went wrong, try again later" };    //if error, return error message
+  }
+}
+
+
+
+// Approve Paypal Order server-action, receives the order id and the paypal order id
+export async function approvePayPalOrder( orderId: string, data: { orderID: string }) {
+  try {
+    // Find the order in the database, if not found throw an error
+    const order = await prisma.order.findFirst({ where: { id: orderId } })
+    if (!order) throw new Error('Order not found')
+    
+    const captureData = await paypal.capturePayment(data.orderID)   //Check if order is already paid using paypal.capturePayment()
+   //if not paid, throw an error
+    if ( !captureData || captureData.id !== (order.paymentResult as paymentResultType)?.id || captureData.status !== 'COMPLETED' )
+      throw new Error('Error in paypal payment')
+
+    //  @todo - Update order to paid
+
+    revalidatePath(`/order/${orderId}`)                     //refresh the data on this page
+
+    return { success: true, message: 'Your order has been successfully paid by PayPal'  }   //return success message
+  } catch {
+    return { success: false, message: "something went wrong, try again later" }     //if error, return error message
+  }
+}
+
+

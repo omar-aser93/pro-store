@@ -6,12 +6,28 @@ import { auth, signIn, signOut } from '@/auth';           //import the signIn an
 import { paymentMethodSchema, paymentMethodType, shippingAddressSchema, shippingAddressType, signInType, signUpType} from '../validator';     
 import { hash } from '../encrypt';                   //hashing using function we manually created (encrypt.ts file)
 import { prisma } from '@/db/prisma';                //import the Prisma client from prisma.ts, the file we created
+import { cookies } from 'next/headers';
 
 
 // Sign in the user with email/password server-action
 export async function signInWithCredentials(prevState: unknown, data: signInType) {
-  try {    
-    await signIn("credentials", data);                             //pass user credentials to Next_Auth signIn() function 
+  try {      
+    await signIn("credentials", data);               //pass received user credentials to Next_Auth signIn() function 
+       
+    // Handle persisting the guest cart when user signs in
+    const cookiesObject = await cookies();                              //Get Nextjs cookies
+    const sessionCartId = cookiesObject.get('sessionCartId')?.value;    //Get sessionCartId cookie for the guest cart
+    if (sessionCartId) {
+      // Find the guest cart by the sessionCartId
+      const sessionCart = await prisma.cart.findFirst({ where: { sessionCartId } });
+      if (sessionCart) {
+        const user = await prisma.user.findFirst({ where: { email: data.email }});    //get the user by email
+        // clear & Delete any existing user cart
+        await prisma.cart.deleteMany({ where: { userId: user?.id } });
+        // Assign the guest cart to the logged-in user
+        await prisma.cart.update({ where: { id: sessionCart.id }, data: { userId: user?.id } });
+      }
+    }
     return { success: true, message: "Signed in successfully" };   //return success message, will be used in useActionState()
   } catch (error) {
     if (isRedirectError(error)) { throw error; }
@@ -23,7 +39,7 @@ export async function signInWithCredentials(prevState: unknown, data: signInType
 
 // Sign the user out server-action
 export async function signOutUser() {
-    await signOut({redirect: true});                       //Next_Auth signOut() function    
+  await signOut({redirect: true});                       //Next_Auth signOut() function    
 }
 
 
@@ -40,8 +56,23 @@ export async function signUp(prevState: unknown, data: signUpType) {
     
     //create the user in the db using Prisma (with the data we recieved & hashed password)
     await prisma.user.create({ data: { name: data.name, email: data.email, password: data.password } });
-
     await signIn('credentials', { email: data.email, password: plainPassword });    //pass user credentials to Next_Auth signIn() function 
+    
+    // Handle persisting the guest cart when user signs up
+    const cookiesObject = await cookies();                              //Get Nextjs cookies
+    const sessionCartId = cookiesObject.get('sessionCartId')?.value;    //Get sessionCartId cookie for the guest cart
+    if (sessionCartId) {
+      // Find the guest cart by the sessionCartId
+      const sessionCart = await prisma.cart.findFirst({ where: { sessionCartId } });
+      if (sessionCart) {
+        const user = await prisma.user.findFirst({ where: { email: data.email }});    //get the user by email
+        // clear & Delete any existing user cart
+        await prisma.cart.deleteMany({ where: { userId: user?.id } });
+        // Assign the guest cart to the logged-in user
+        await prisma.cart.update({ where: { id: sessionCart.id }, data: { userId: user?.id } });
+      }
+    }
+    
     return { success: true, message: 'User created successfully' };                 //return success message, will be used in useActionState()
   } catch (error) {
     if (isRedirectError(error)) { throw error; }  
