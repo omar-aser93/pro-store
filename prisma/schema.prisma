@@ -158,3 +158,4 @@ model OrderItem {
   //composite primary key for OrderItem model. It is made up of the `orderId` and `productId` fields
   @@id([orderId, productId], map: "orderItems_orderId_productId_pk")
 }
+
