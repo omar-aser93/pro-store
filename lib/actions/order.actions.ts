@@ -112,18 +112,42 @@ export async function approvePayPalOrder( orderId: string, data: { orderID: stri
     if (!order) throw new Error('Order not found')
     
     const captureData = await paypal.capturePayment(data.orderID)   //Check if order is already paid using paypal.capturePayment()
-   //if not paid, throw an error
-    if ( !captureData || captureData.id !== (order.paymentResult as paymentResultType)?.id || captureData.status !== 'COMPLETED' )
-      throw new Error('Error in paypal payment')
+    //if not paid or the order id is not the same, throw an error
+    if ( !captureData || captureData.id !== (order.paymentResult as paymentResultType)?.id || captureData.status !== 'COMPLETED' )  throw new Error('Error in paypal payment')
 
-    //  @todo - Update order to paid
+    // Call (Update order to paid) function, pass the order id and a payment result object
+    await updateOrderToPaid({ 
+      orderId, paymentResult: { id: captureData.id, status: captureData.status, email_address: captureData.payer.email_address, pricePaid: captureData.purchase_units[0]?.payments?.captures[0]?.amount?.value }
+    });
 
     revalidatePath(`/order/${orderId}`)                     //refresh the data on this page
-
     return { success: true, message: 'Your order has been successfully paid by PayPal'  }   //return success message
   } catch {
     return { success: false, message: "something went wrong, try again later" }     //if error, return error message
   }
 }
+
+
+//Function to Update Order to Paid in Database , used in approvePayPalOrder server-action
+async function updateOrderToPaid({ orderId, paymentResult }: { orderId: string; paymentResult?: paymentResultType}) {
+  //Find the order in the database and include the order items, if order is not found or already paid throw an error
+  const order = await prisma.order.findFirst({ where: { id: orderId }, include: { orderItems: true } });
+  if (!order) throw new Error('Order not found');
+  if (order.isPaid) throw new Error('Order is already paid');
+
+  // Create a prisma transaction to update the order and update products stock quantities (transaction is a way to ensure all operations are completed successfully or none of them are completed &  DB is left the same as before the transaction started)
+  await prisma.$transaction(async (tx) => {
+    // 1st: Update each item's stock quantities in the database
+    for (const item of order.orderItems) {
+      await tx.product.update({ where: { id: item.productId }, data: { stock: { increment: -item.qty }} });
+    }
+    // 2nd: update the order in the database, by Setting isPaid to true
+    await tx.order.update({ where: { id: orderId }, data: { isPaid: true, paidAt: new Date(), paymentResult } });
+  });
+
+  // Get the updated order after the transaction, if not found throw an error
+  const updatedOrder = await prisma.order.findFirst({ where: { id: orderId }, include: { orderItems: true, user: { select: { name: true, email: true }} } });
+  if (!updatedOrder) { throw new Error('Order not found');  }
+};
 
 

@@ -3,19 +3,49 @@
 import { formatCurrency, formatDateTime, formatId } from '@/lib/utils';
 import Image from 'next/image';
 import Link from 'next/link';
+import { Order } from '@/lib/validator';
+import { approvePayPalOrder, createPayPalOrder } from '@/lib/actions/order.actions';
+import { PayPalButtons, PayPalScriptProvider, usePayPalScriptReducer} from '@paypal/react-paypal-js';    //react-paypal lib
 //shadcn components
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-//import { useToast } from '@/hooks/use-toast';
-import { Order } from '@/lib/validator';
+import { useToast } from '@/hooks/use-toast';
 
 
-const OrderDetailsTable = ({ order }: { order: Order }) => {
+// OrderDetailsTable component, displays a table & a payment buttons for a single order which is received as a prop
+const OrderDetailsTable = ({ order }: { order: Order; }) => {
   
-  //const { toast } = useToast();                     //useToast hook to show toast messages
+  const { toast } = useToast();                     //useToast hook to show toast messages
   //destructuring the recieved order data
   const { shippingAddress, orderItems, itemsPrice, taxPrice, shippingPrice, totalPrice, paymentMethod, isPaid, paidAt, isDelivered, deliveredAt, } = order;
+
+
+  // Checks the loading status of the PayPal script
+  function PrintLoadingState() {
+    const [{ isPending, isRejected }] = usePayPalScriptReducer();     //usePayPalScriptReducer hook from react-paypal-js lib      
+    let status = '';
+    if (isPending) {
+      status = 'Loading PayPal...';                   //if isPending, show loading message
+    } else if (isRejected) {
+      status = 'Error in loading PayPal.';            //if isRejected, show error message
+    }
+    return status;
+  }
+
+  // Creates a PayPal order using the createPayPalOrder server-action, if there is an error return a toast
+  const handleCreatePayPalOrder = async () => {
+    const res = await createPayPalOrder(order.id);
+    if (!res.success) return toast({ description: res.message, variant: 'destructive' });
+    return res.data;
+  };
+
+  // Approves a PayPal order using the approvePayPalOrder server-action , if succes/error return a toast
+  const handleApprovePayPalOrder = async (data: { orderID: string }) => {
+    const res = await approvePayPalOrder(order.id, data);
+    toast({ description: res.message, variant: res.success ? 'default' : 'destructive' });
+  };
+
 
   return (
     <>
@@ -95,6 +125,14 @@ const OrderDetailsTable = ({ order }: { order: Order }) => {
                 <div>Total</div>
                 <div>{formatCurrency(totalPrice)}</div>
             </div>
+            {/* PayPal Button.. we pass PrintLoadingState, createPayPalOrder and handleApprovePayPalOrder functions */}
+            {!isPaid && paymentMethod === 'PayPal' && (
+              <div>
+                <PayPalScriptProvider options={{ clientId: process.env.PAYPAL_CLIENT_ID || 'sb' }}>
+                  <PrintLoadingState />
+                  <PayPalButtons createOrder={handleCreatePayPalOrder} onApprove={handleApprovePayPalOrder}  />
+                </PayPalScriptProvider>
+              </div> )}
             </CardContent>
           </Card>
         </div>

@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { compare } from './lib/encrypt';             //to compare db password with the form password (manually created function)
-import type { NextAuthConfig } from 'next-auth';     //TS type for the Next Auth configuration
+import { compareSync } from 'bcrypt-ts-edge';         //function to compare the encrypted db password with the form password      
+import type { NextAuthConfig } from 'next-auth';      //TS type for the Next Auth configuration
 import NextAuth from 'next-auth';                    
 import CredentialsProvider from 'next-auth/providers/credentials';   //provider to authenticate users. This just email/password. There are many other providers , such as Google, Facebook, Twitter, etc.
 import { prisma } from '@/db/prisma';
@@ -20,18 +20,11 @@ export const config = {
         // If credentials are not provided, return null .. otherwise, Find user in database by his email
         if (credentials == null) return null;        
         const user = await prisma.user.findFirst({ where: { email: credentials.email as string }});  
-        // Check if user & his password exists, then check if the password in db matches the form submitted password
+        // Check if the user & his password exists, then check if the password in db matches the form submitted password
         if (user && user.password) {
-          const isMatch = await compare( credentials.password as string, user.password );          
+          const isMatch = compareSync( credentials.password as string, user.password );         
           // If password is correct, return the user object for the session
-          if (isMatch) {
-            return {
-              id: user.id,
-              name: user.name,
-              email: user.email,
-              role: user.role,
-            };
-          }
+          if (isMatch) { return { id: user.id, name: user.name, email: user.email, role: user.role }; }
         }
         // If user doesn't exist or password is incorrect, return null
         return null;

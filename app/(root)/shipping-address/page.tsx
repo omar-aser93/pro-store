@@ -15,13 +15,16 @@ export const metadata: Metadata = {
 //Shipping Address Page, will display the shipping address form component after we pass the user's address as a prop
 const ShippingAddressPage = async () => {
   
-  const cart = await getMyCart();     //Fetch the user's cart using getMyCart() server_action
-  if (!cart || cart.items.length === 0) redirect('/cart');     //If cart is empty, redirect to the cart page
+  //Fetch the current user's session (NextAuth), redirect unauthenticated users to the sign-in page
+  const session = await auth();    
+  if (!session) { redirect('/sign-in'); }
 
-  //Fetch the current user's session (NextAuth) to get the user ID .. if not found, throw an error
-  const session = await auth();      
+  const cart = await getMyCart();                             //Fetch user's cart using getMyCart() server-action
+  if (!cart || cart.items.length === 0) redirect('/cart');    //If cart is empty, redirect to the cart page
+  
+  //get current user ID .. if not found, throw an error
   const userId = session?.user?.id;  
-  if (!userId) throw new Error('No user ID');           
+  if (!userId) throw new Error('No user ID');   
 
   //Fetch user by ID using getUserById() server-action, to get user's extra data not in NextAuth session (ex: address object)
   const user = await getUserById(userId);    

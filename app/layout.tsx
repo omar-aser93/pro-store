@@ -3,6 +3,7 @@ import { Inter } from 'next/font/google';
 import { ThemeProvider } from 'next-themes';       //next-themes lib for light/dark mode, we wrap the provider around the children 
 import { Toaster } from '@/components/ui/toaster';    //shadcn Toaster, we add it under the children 
 import "./globals.css";
+import { cookies } from "next/headers";               //nextjs cookies used with server-components
 
 
 const inter = Inter({ subsets: ['latin'] });       //we import the Inter font from google fonts
@@ -15,7 +16,12 @@ export const metadata: Metadata = {
 };
 
 // RootLayout is the main layout for all pages, it wraps the children (their type - {children: React.ReactNode})
-export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+
+  //when a user visits the app, Check for a guest sessionCartId cookie .. if not found -> create a new one (random ID)
+  const sessionCartId = (await cookies()).get('sessionCartId')?.value;
+  if (!sessionCartId) { (await cookies()).set('sessionCartId', crypto.randomUUID())} 
+ 
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`${inter.className}`} >

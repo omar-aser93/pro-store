@@ -25,7 +25,7 @@ const calcPrice = (items: cartItemType[]) => {
 // Add item to cart server-action, receives a cart item as a parameter
 export async function addItemToCart(data: cartItemType) {
   try {
-    // Check for stored guest cart cookie, if not found, throw an error .. we created this cookie in auth.ts (NextAuth)
+    // Check for stored guest cart Id cookie, if not found, throw an error .. we created this cookie in the layout when a user visits the site
     const sessionCartId = (await cookies()).get("sessionCartId")?.value;
     if (!sessionCartId) throw new Error("Cart Session not found");
 
@@ -78,7 +78,7 @@ export async function addItemToCart(data: cartItemType) {
 
 // Get user's cart server-action
 export async function getMyCart() {
-  // Check for stored cart cookie, if not found, throw an error .. we created this in auth.ts (NextAuth)
+  // Check for stored guest cart Id cookie, if not found, throw an error .. we created this cookie in the layout when a user visits the site
   const sessionCartId = (await cookies()).get("sessionCartId")?.value;
   if (!sessionCartId) throw new Error("Cart Session not found");
 
@@ -106,7 +106,7 @@ export async function getMyCart() {
 //removeItemFromCart server-action, receives a product ID as a parameter
 export async function removeItemFromCart(productId: string) {
   try {
-    // Check for stored cart cookie, if not found, throw an error .. we created this cookie in auth.ts (NextAuth)
+    // Check for stored guest cart Id cookie, if not found, throw an error .. we created this cookie in the layout when a user visits the site
     const sessionCartId = (await cookies()).get("sessionCartId")?.value;
     if (!sessionCartId) throw new Error("Cart Session not found");
 

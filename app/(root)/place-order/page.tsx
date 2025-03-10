@@ -1,6 +1,6 @@
 import Image from 'next/image';
 import Link from 'next/link';
-import { redirect } from 'next/navigation';                          //redirect similar to useRouter().push() but preferred for server-components
+import { redirect } from 'next/navigation';         //redirect similar to useRouter().push() but preferred for server-components
 import { auth } from '@/auth';
 import CheckoutSteps from '@/components/shared/checkout-steps';
 import PlaceOrderForm from './place-order-form';
@@ -22,8 +22,11 @@ export const metadata = {
 // Place Order Page, contains cards of user's address, payment method, order items & summary and the submit button component
 const placeOrderPage = async () => {
   
-  //Fetch the current user's session (NextAuth) to get the user ID .. if not found, throw an error
-  const session = await auth();      
+  //Fetch the current user's session (NextAuth), redirect unauthenticated users to the sign-in page
+  const session = await auth();    
+  if (!session) { redirect('/sign-in'); }
+
+  //get current user ID .. if not found, throw an error
   const userId = session?.user?.id;  
   if (!userId) throw new Error('No user ID');      
 
