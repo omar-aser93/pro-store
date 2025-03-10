@@ -2,12 +2,13 @@
 "use server";
 
 import { revalidatePath } from "next/cache";        //revalidatePath to purge cached data on-demand for a specific path.
-import { cookies } from "next/headers";
+import { cookies } from "next/headers";              //nextjs cookies used with server-actions/components
 import { auth } from "@/auth";
 import { cartItemType, cartItemSchema, insertCartSchema } from "../validator";    //import the zod Schemas & types
 import { prisma } from "@/db/prisma";                       //import the Prisma client from prisma.ts, the file we created
 import { convertToPlainObject, round2 } from "../utils";    //utility functions to convert & format objects
 import { Prisma } from "@prisma/client";                                 //will need it for some Prisma types
+import { randomUUID } from "crypto";
 
 
 // Function to accurately Round & Calculate cart prices, will be used inside the cart server-actions
@@ -22,10 +23,23 @@ const calcPrice = (items: cartItemType[]) => {
 
 
 
+//guestCartId server-action, Checks for a guest sessionCartId cookie .. if not found -> create a new one (random ID)
+export async function guestCartId() {   
+  const sessionCartId = (await cookies()).get('sessionCartId')?.value;
+  if (!sessionCartId) {
+    const newSessionCartId = randomUUID();
+    (await cookies()).set('sessionCartId', newSessionCartId);
+    return { sessionCartId: newSessionCartId };        //res with the new sessionCartId
+  }
+  return { sessionCartId };                            //res with the existing sessionCartId
+}
+
+
+
 // Add item to cart server-action, receives a cart item as a parameter
 export async function addItemToCart(data: cartItemType) {
   try {
-    // Check for stored guest cart Id cookie, if not found, throw an error .. we created this cookie in the layout when a user visits the site
+    // Check for stored guest cart Id cookie, if not found, throw an error .. we created this cookie in guestCartId() server-action
     const sessionCartId = (await cookies()).get("sessionCartId")?.value;
     if (!sessionCartId) throw new Error("Cart Session not found");
 
@@ -78,7 +92,7 @@ export async function addItemToCart(data: cartItemType) {
 
 // Get user's cart server-action
 export async function getMyCart() {
-  // Check for stored guest cart Id cookie, if not found, throw an error .. we created this cookie in the layout when a user visits the site
+  // Check for stored guest cart Id cookie, if not found, throw an error .. we created this cookie in guestCartId() server-action
   const sessionCartId = (await cookies()).get("sessionCartId")?.value;
   if (!sessionCartId) throw new Error("Cart Session not found");
 
@@ -106,7 +120,7 @@ export async function getMyCart() {
 //removeItemFromCart server-action, receives a product ID as a parameter
 export async function removeItemFromCart(productId: string) {
   try {
-    // Check for stored guest cart Id cookie, if not found, throw an error .. we created this cookie in the layout when a user visits the site
+    // Check for stored guest cart Id cookie, if not found, throw an error .. we created this cookie in guestCartId() server-action
     const sessionCartId = (await cookies()).get("sessionCartId")?.value;
     if (!sessionCartId) throw new Error("Cart Session not found");
 
