@@ -151,3 +151,24 @@ async function updateOrderToPaid({ orderId, paymentResult }: { orderId: string; 
 };
 
 
+
+//User's orders history server-action, receives limit & page values for pagination 
+export async function getMyOrders({ limit = Number(process.env.NEXT_PUBLIC_PAGE_SIZE), page }: { limit?: number; page: number; }) {
+  // Check if the user is authenticated, if not throw an error
+  const session = await auth();
+  if (!session) throw new Error('User is not authenticated');
+
+  // Get the user's orders by his id from the database.
+  const data = await prisma.order.findMany({
+    where: { userId: session?.user?.id },
+    orderBy: { createdAt: 'desc' },           //order by createdAt in a descending order
+    take: limit,                              //take the limit (items per page)
+    skip: (page - 1) * limit,                 //paginate the data, skip (page number) * (items per page)
+  });
+  
+  //get the total number of the user's orders, to calculate the total number of pages 
+  const dataCount = await prisma.order.count({ where: { userId: session?.user?.id } });     
+
+  return { data, totalPages: Math.ceil(dataCount / limit)        //res with data and the total number of pages
+  };
+}

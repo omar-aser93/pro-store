@@ -24,7 +24,8 @@ const OrderDetailsPage = async (props: { params: Promise<{ id: string }> }) => {
 
   return (  
    //Pass the order data to the OrderDetailsTable component, shippingAddress have a specific type so we cast it to shippingAddressType to avoid TS error
-   <OrderDetailsTable order={{ ...order, shippingAddress: order.shippingAddress as shippingAddressType }} />);
+   //we also pass PAYPAL_CLIENT_ID.. because it doesn't have NEXT_PUBLIC_ prefix, so we can only access it in server-component
+   <OrderDetailsTable order={{ ...order, shippingAddress: order.shippingAddress as shippingAddressType }} paypalClientId={process.env.PAYPAL_CLIENT_ID || 'sb'}/>);
 };
 
 export default OrderDetailsPage;

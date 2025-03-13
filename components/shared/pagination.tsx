@@ -1,0 +1,43 @@
+'use client';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { Button } from '../ui/button';             //shadcn button
+
+
+//Pagination client-component
+const Pagination = ({ page, totalPages, urlParamName = 'page' }: { page: number | string; totalPages: number; urlParamName?: string; }) => {
+  
+  const router = useRouter();                    //useRouter() hook to dynamically navigate to a page
+  const searchParams = useSearchParams();        //useSearchParams() hook to get URL searchParams in a client-component
+
+  //Function to navigate to a specific pagination page, it receives the page number
+  const goToPage = (pageNumber: number) => {
+    if (pageNumber < 1 || pageNumber > totalPages) return;      //if page num is negative or > total pages, return out
+
+    const params = new URLSearchParams(searchParams);           //create object of the URL params
+    params.set(urlParamName, pageNumber.toString());            //append '?page=' param & set it's value to pageNumber
+    router.push(`?${params.toString()}`);                       //push to the needed page based on the param
+  };
+
+  return (
+    <div className='flex gap-2 my-3'>
+      {/* prev button, onClick will decrement page number .. also, will be disabled if page number is 1 */}
+      <Button onClick={() => goToPage(Number(page) - 1)} disabled={Number(page) <= 1} size='lg' variant='outline' className='w-28' > 
+        Previous 
+      </Button>
+
+      {/* Page Numbers buttons, create array of numbers from 1 to total pages, then map through it */}
+      {Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNumber) => (
+        <Button key={pageNumber} onClick={() => goToPage(pageNumber)} variant={pageNumber === page ? 'default' : 'outline'} className="w-10" >
+          {pageNumber}
+        </Button>
+      ))}
+
+      {/* Next button, onClick will increment page number .. also, will be disabled for last page (page number is equal to total pages) */}
+      <Button onClick={() => goToPage(Number(page) + 1)} disabled={Number(page) >= totalPages} size='lg' variant='outline' className='w-28' > 
+        Next 
+      </Button>
+    </div>
+  );
+};
+
+export default Pagination;

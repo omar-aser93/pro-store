@@ -2,7 +2,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";        //revalidatePath to purge cached data on-demand for a specific path.
-import { cookies } from "next/headers";              //nextjs cookies used with server-actions/components
+import { cookies } from "next/headers";             //next cookies we can set it in server-actions & get it in components
 import { auth } from "@/auth";
 import { cartItemType, cartItemSchema, insertCartSchema } from "../validator";    //import the zod Schemas & types
 import { prisma } from "@/db/prisma";                       //import the Prisma client from prisma.ts, the file we created

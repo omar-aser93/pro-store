@@ -24,10 +24,10 @@ const PaymentMethodForm = ({ preferredPaymentMethod }: { preferredPaymentMethod:
   const [isPending, startTransition] = useTransition();     //useTransition() hook to allow pending state while submitting/event
 
   //useForm hook to create a form with zodResolver and defaultValues, we will use the user's pay method prop as defaultValue || default value we defined in .env  
-  const form = useForm<paymentMethodType>({ resolver: zodResolver(paymentMethodSchema), defaultValues: {type: preferredPaymentMethod || process.env.DEFAULT_PAYMENT_METHOD } });
+  const form = useForm<paymentMethodType>({ resolver: zodResolver(paymentMethodSchema), defaultValues: {type: preferredPaymentMethod || process.env.NEXT_PUBLIC_DEFAULT_PAYMENT_METHOD } });
 
   //onSubmit function to handle the form submission, will recieve the shadcn form values
-  async function onSubmit(values: paymentMethodType) {
+  async function onSubmit(values: paymentMethodType) {   
     startTransition(async () => {
       //server-action to set the user's payment method in db 
       const res = await updateUserPaymentMethod(values);
@@ -40,6 +40,7 @@ const PaymentMethodForm = ({ preferredPaymentMethod }: { preferredPaymentMethod:
     });
   }
 
+  
   return (
     <>
      {/* CheckoutSteps component, we pass the current step number to change style of the active step title */}
@@ -57,7 +58,7 @@ const PaymentMethodForm = ({ preferredPaymentMethod }: { preferredPaymentMethod:
                   <FormControl>
                     <RadioGroup onValueChange={field.onChange} className='flex flex-col space-y-2' >
                       {/* loop through the payment methods we defined in the .env file, then pass it to radio item */}  
-                      {process.env.PAYMENT_METHODS?.split(', ').map((paymentMethod) => (
+                      {process.env.NEXT_PUBLIC_PAYMENT_METHODS?.split(', ').map((paymentMethod) => (
                         <FormItem key={paymentMethod} className='flex items-center space-x-3 space-y-0' >
                           <FormControl>
                             <RadioGroupItem value={paymentMethod} checked={field.value === paymentMethod} />
@@ -73,7 +74,7 @@ const PaymentMethodForm = ({ preferredPaymentMethod }: { preferredPaymentMethod:
             />
           </div>
 
-          {/* submit button */}
+          {/* submit button, disabled if isPending */}
           <div className='flex gap-2'>
             <Button type='submit' disabled={isPending}>
               {isPending ? (<Loader className='animate-spin w-4 h-4' /> ) : ( <ArrowRight className='w-4 h-4' />  )}

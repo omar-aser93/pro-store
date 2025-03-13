@@ -95,7 +95,7 @@ export type shippingAddressType = z.infer<typeof shippingAddressSchema>;
 //Zod Schema for Payment methodes (we defined 3 types of payment methods in the .env file)
 export const paymentMethodSchema = z.object({
   type: z.string().min(1, 'Pyament method is required'), })
-  .refine((data) => process.env.PAYMENT_METHODS?.split(', ').includes(data.type), { path: ['type'], message: 'Invalid payment method'
+  .refine((data) => process.env.NEXT_PUBLIC_PAYMENT_METHODS?.split(', ').includes(data.type), { path: ['type'], message: 'Invalid payment method'
   });
 //We use `z.infer` to create a payment Method TS type
 export type paymentMethodType = z.infer<typeof paymentMethodSchema>;
@@ -108,7 +108,7 @@ export const insertOrderSchema = z.object({
   shippingPrice: currency,
   taxPrice: currency,
   totalPrice: currency,
-  paymentMethod: z.string().refine((data) => process.env.PAYMENT_METHODS?.split(', ').includes(data), {
+  paymentMethod: z.string().refine((data) => process.env.NEXT_PUBLIC_PAYMENT_METHODS?.split(', ').includes(data), {
     message: 'Invalid payment method',
   }),
   shippingAddress: shippingAddressSchema,
@@ -148,3 +148,13 @@ export const paymentResultSchema = z.object({
 });
 //We use `z.infer` to create a paymentResult TS type
 export type paymentResultType = z.infer<typeof paymentResultSchema>;
+
+
+
+// Zod Schema for Update Profile 
+export const updateProfileSchema = z.object({
+  name: z.string().min(3, 'Name must be at least 3 characters'),
+  email: z.string().min(3, 'Email must be at least 3 characters'),
+});
+//We use `z.infer` to create an updateProfile TS type
+export type updateProfileType = z.infer<typeof updateProfileSchema>;

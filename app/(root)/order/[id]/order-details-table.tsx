@@ -14,7 +14,7 @@ import { useToast } from '@/hooks/use-toast';
 
 
 // OrderDetailsTable component, displays a table & a payment buttons for a single order which is received as a prop
-const OrderDetailsTable = ({ order }: { order: Order; }) => {
+const OrderDetailsTable = ({ order, paypalClientId }: { order: Order; paypalClientId: string; }) => {
   
   const { toast } = useToast();                     //useToast hook to show toast messages
   //destructuring the recieved order data
@@ -128,7 +128,7 @@ const OrderDetailsTable = ({ order }: { order: Order; }) => {
             {/* PayPal Button.. we pass PrintLoadingState, createPayPalOrder and handleApprovePayPalOrder functions */}
             {!isPaid && paymentMethod === 'PayPal' && (
               <div>
-                <PayPalScriptProvider options={{ clientId: process.env.PAYPAL_CLIENT_ID || 'sb' }}>
+                <PayPalScriptProvider options={{ clientId: paypalClientId }}>
                   <PrintLoadingState />
                   <PayPalButtons createOrder={handleCreatePayPalOrder} onApprove={handleApprovePayPalOrder}  />
                 </PayPalScriptProvider>

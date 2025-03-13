@@ -95,7 +95,7 @@ export async function updateUserAddress(data: shippingAddressType) {
     if (!currentUser) throw new Error('User not found');
 
     const address = shippingAddressSchema.parse(data);          //parse the address data using zod schema
-    //update the user's address data in the db using Prisma & pass the recieved address formData
+    //update the user's address data in the db using Prisma & passing the recieved address formData
     await prisma.user.update({ where: { id: currentUser.id }, data: { address } }); 
     return { success: true, message: 'User updated successfully' };                //return success message
   } catch {
@@ -117,8 +117,29 @@ export async function updateUserPaymentMethod( data: paymentMethodType) {
     if (!currentUser) throw new Error('User not found');
 
     const paymentMethod = paymentMethodSchema.parse(data);       //parse the payment method data using zod schema
-    //update the user's payment method in the db using Prisma & pass the recieved payment method formData
+    //update the user's payment method in the db using Prisma & passing the recieved payment method formData
     await prisma.user.update({ where: { id: currentUser.id }, data: { paymentMethod: paymentMethod.type },});
+    return { success: true, message: 'User updated successfully', };                  //return success message
+  } catch {
+    return { success: false, message: 'something went wrong, try again later'  };     //return error message
+  }
+}
+
+
+
+// Update User's Profile server-action
+export async function updateProfile(user: { name: string; email: string }) {
+  try {
+    // Get current user's session to get his ID
+    const session = await auth();
+    const userId = session?.user?.id ? (session.user.id as string) : undefined;
+
+    //get the current user by ID from the db using Prisma, if not found throw error
+    const currentUser = await prisma.user.findFirst({ where: { id: userId } });
+    if (!currentUser) throw new Error('User not found');
+
+    //update the user's profile in the db using Prisma & passing the recieved profile form Data
+    await prisma.user.update({ where: { id: currentUser.id }, data: { name: user.name, } });
     return { success: true, message: 'User updated successfully', };                  //return success message
   } catch {
     return { success: false, message: 'something went wrong, try again later'  };     //return error message
