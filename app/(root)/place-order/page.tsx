@@ -22,11 +22,8 @@ export const metadata = {
 // Place Order Page, contains cards of user's address, payment method, order items & summary and the submit button component
 const placeOrderPage = async () => {
   
-  //Fetch the current user's session (NextAuth), redirect unauthenticated users to the sign-in page
-  const session = await auth();    
-  if (!session) { redirect('/sign-in'); }
-
-  //get current user ID .. if not found, throw an error
+  //get current user ID from the session .. if not found, throw an error
+  const session = await auth();   
   const userId = session?.user?.id;  
   if (!userId) throw new Error('No user ID');      
 

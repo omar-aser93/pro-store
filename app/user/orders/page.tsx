@@ -1,7 +1,5 @@
 import { Metadata } from 'next';
 import Link from 'next/link';
-import { auth } from '@/auth';
-import { redirect } from 'next/navigation';         //redirect similar to useRouter().push() but preferred for server-components
 import { getMyOrders } from '@/lib/actions/order.actions';
 import { formatCurrency, formatDateTime, formatId } from '@/lib/utils';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow} from '@/components/ui/table';   //shadcn table
@@ -15,10 +13,6 @@ export const metadata: Metadata = {
 
 //orders page, to display user's orders history (with pagination) .. props: { searchParams: Promise<{}> } is how to get searchParams in server-component
 const OrdersPage = async (props: { searchParams: Promise<{ page: string }> }) => {
-
-  //Fetch the current user's session (NextAuth), redirect unauthenticated users to the sign-in page
-  const session = await auth();    
-  if (!session) { redirect('/sign-in'); }
 
   const { page } = await props.searchParams;                       //get page_number param from the URL searchParams
   //pass page number to getMyOrders() server-action & set default page number to 1, also we can pass limit (items per page) if we want 
@@ -47,16 +41,16 @@ const OrdersPage = async (props: { searchParams: Promise<{ page: string }> }) =>
           {orders.data.map((order) => (
             <TableRow key={order.id}>
               <TableCell>{formatId(order.id)}</TableCell>
-              <TableCell> {formatCurrency(order.totalPrice)}</TableCell>
+              <TableCell>{formatDateTime(order.createdAt).dateTime}</TableCell>
               <TableCell>{formatCurrency(order.totalPrice)}</TableCell>
               <TableCell>
-                {order.isPaid && order.paidAt ? formatDateTime(order.paidAt).dateTime : 'not paid'}
+                {order.isPaid && order.paidAt ? formatDateTime(order.paidAt).dateTime : <span className='text-red-500'>not paid</span> }
               </TableCell>
               <TableCell>
-                {order.isDelivered && order.deliveredAt ? formatDateTime(order.deliveredAt).dateTime : 'not delivered'}
+                {order.isDelivered && order.deliveredAt ? formatDateTime(order.deliveredAt).dateTime : <span className='text-red-500'>not delivered</span> }
               </TableCell>
               <TableCell>
-                <Link href={`/order/${order.id}`}> <span className='px-2'>Details</span> </Link>
+                <Link href={`/order/${order.id}`}> <span className='py-1 px-2 bg-black text-white rounded-md'>Details</span> </Link>
               </TableCell>
             </TableRow>
           ))}

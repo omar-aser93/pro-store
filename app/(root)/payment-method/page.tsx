@@ -1,6 +1,5 @@
 import { Metadata } from 'next';
 import { auth } from '@/auth';
-import { redirect } from 'next/navigation';         //redirect similar to useRouter().push() but preferred for server-components
 import { getUserById } from '@/lib/actions/user.actions';
 import PaymentMethodForm from './payment-method-form';
 
@@ -13,11 +12,8 @@ export const metadata: Metadata = {
 //payment method page, will display the payment method form component after we pass the user's pay-method as a prop
 const PaymentMethodPage = async () => {
 
-  //Fetch the current user's session (NextAuth), redirect unauthenticated users to the sign-in page
-  const session = await auth();    
-  if (!session) { redirect('/sign-in'); }
-
-  //get current user ID .. if not found, throw an error
+  //get current user ID from the session .. if not found, throw an error
+  const session = await auth();   
   const userId = session?.user?.id;  
   if (!userId) throw new Error('No user ID');  
 

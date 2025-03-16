@@ -1,7 +1,7 @@
 'use server';
 
 import { isRedirectError } from 'next/dist/client/components/redirect-error';   //`isRedirectError` function used to check if error is a redirect error
-import { auth, signIn, signOut } from '@/auth';           //import the signIn and signOut functions from auth.ts
+import { auth, signIn, signOut } from '@/auth';      //import the signIn and signOut functions from auth.ts
 //import zod Schemas/types from validator.ts
 import { paymentMethodSchema, paymentMethodType, shippingAddressSchema, shippingAddressType, signInType, signUpType} from '../validator';     
 import { hashSync } from 'bcrypt-ts-edge';           //hashing function from bcrypt-ts library
@@ -25,7 +25,7 @@ export async function signInWithCredentials(prevState: unknown, data: signInType
         await prisma.cart.update({ where: { id: sessionCart.id }, data: { userId: user?.id } });  //Assign the guest cart to the logged-in user
       }
     }
-
+   
     return { success: true, message: "Signed in successfully" };   //return success message, will be used in useActionState()
   } catch (error) {
     if (isRedirectError(error)) { throw error; }

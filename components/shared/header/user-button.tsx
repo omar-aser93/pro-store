@@ -11,7 +11,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
 const UserButton = async () => {
 
   //check if user is already signed in with Next_Auth session from auth(), if not, show sign in button
-  const session = await auth();
+  const session = await auth();  
   if (!session) return ( <Link href="/api/auth/signin"> <Button> <UserIcon/> Sign In</Button> </Link> )
   
   const firstInitial = session?.user?.name?.charAt(0).toUpperCase() ?? '';     //get first initial of user's name

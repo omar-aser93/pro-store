@@ -2,7 +2,7 @@
 import Link from 'next/link';
 import { startTransition, useActionState } from 'react';
 import { signInWithCredentials } from '@/lib/actions/user.actions';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams } from "next/navigation";
 //import "react-hook-form" hook & zodResolver + the zod Schema/type from validator.ts
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -16,9 +16,8 @@ import { Label } from '@/components/ui/label';
 //Credentials sign-in form component
 const CredentialsSignInForm = () => {     
 
-  //getting searchParams in a client component using useSearchParams() hook, then we set callbackUrl with it's param value
-  const searchParams = useSearchParams();
-  const callbackUrl = searchParams.get('callbackUrl') || '/';
+  const searchParams = useSearchParams();       //getting searchParams in a client component using useSearchParams() hook
+  const callbackUrl = searchParams.get('callbackUrl') || '/';    //we set a callbackUrl const with it's URL param value
 
   //useActionState hook .. [data is the state returned from the server_action, action we pass it to form action={}, isPending: status of the req] = useActionState(server_action name, initial state)
   const [data, action, isPending] = useActionState(signInWithCredentials, { message: '', success: false });
@@ -26,10 +25,11 @@ const CredentialsSignInForm = () => {
   //Define useForm hook & pass (Zod Schema & type) to the zodResolver of "react-hook-form" 
   const { register, handleSubmit, formState: { errors } }  = useForm<signInType>({ resolver: zodResolver(signInFormSchema) })
 
-  //function to handle "react-hook-form" submit
+  //function to handle "react-hook-form" submit & startTransition to allow pending state 
   const onSubmit = (values: signInType) => {       
-    startTransition(() => { action(values); });       //pass the data to the server_action & startTransition to allow pending state 
+    startTransition(() => { action(values); });        //pass the data to the server_action
   }
+
   return (
     <form onSubmit={handleSubmit(onSubmit)}>
       <div className='space-y-6'>
@@ -45,7 +45,7 @@ const CredentialsSignInForm = () => {
           <Input {...register('password')} id='password' type='password' defaultValue='' autoComplete='current-password' />
           {errors.password && <div className='text-center text-destructive mt-2'>{errors.password.message}</div>}
         </div>        
-        {/* Hidden input for callbackUrl, to persist the callback when we submit the form */}
+        {/* Hidden input for callbackUrl, to persist the callback when we submit the form (used to redirect to previous page) */}
         <input type='hidden' {...register('callbackUrl')} value={callbackUrl} />
 
         {/* Sign in button, if isPending, then show 'Signing In...' & disable the button */}

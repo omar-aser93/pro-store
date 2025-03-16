@@ -14,15 +14,12 @@ export const metadata: Metadata = {
 
 //Shipping Address Page, will display the shipping address form component after we pass the user's address as a prop
 const ShippingAddressPage = async () => {
-  
-  //Fetch the current user's session (NextAuth), redirect unauthenticated users to the sign-in page
-  const session = await auth();    
-  if (!session) { redirect('/sign-in'); }
 
   const cart = await getMyCart();                             //Fetch user's cart using getMyCart() server-action
   if (!cart || cart.items.length === 0) redirect('/cart');    //If cart is empty, redirect to the cart page
   
-  //get current user ID .. if not found, throw an error
+  //get current user ID from the session .. if not found, throw an error
+  const session = await auth();  
   const userId = session?.user?.id;  
   if (!userId) throw new Error('No user ID');   
 
