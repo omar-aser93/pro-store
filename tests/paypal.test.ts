@@ -38,7 +38,7 @@ test("simulates capturing a PayPal order", async () => {
   const captureResponse = await paypal.capturePayment(orderId);
   // Ensure the capture response contains expected fields
   expect(captureResponse).toHaveProperty("status", "COMPLETED");
-
+ 
   // Clean up mock
   mockCapturePayment.mockRestore();
 });

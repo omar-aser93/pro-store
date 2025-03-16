@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger} from '@/components/ui/dropdown-menu';
 
 
+//UserButton component, displays the user's dropdown menu
 const UserButton = async () => {
 
   //check if user is already signed in with Next_Auth session from auth(), if not, show sign in button
@@ -28,7 +29,7 @@ const UserButton = async () => {
       </div>
     </DropdownMenuTrigger>
     <DropdownMenuContent className='w-56' align='end' forceMount>
-      {/*user's name and email info*/}
+      {/*User's name and email info, displayed in a menu label */}
       <DropdownMenuLabel className='font-normal'>
         <div className='flex flex-col space-y-1'>
           <p className='text-sm font-medium leading-none'> {session?.user?.name} </p>
@@ -36,13 +37,20 @@ const UserButton = async () => {
         </div>
       </DropdownMenuLabel>
 
-      {/*user profile & order_history links in a menu items */}
+      {/*User profile & order_history links in a menu items */}
       <DropdownMenuItem>
         <Link className="w-full" href="/user/profile"> User Profile </Link>
       </DropdownMenuItem>
       <DropdownMenuItem>
         <Link className='w-full' href='/user/orders'> Order History </Link>
       </DropdownMenuItem>
+
+      {/*Admin dashboard link in a menu item, only visible if user is an admin */}
+      {session?.user?.role === 'admin' && (
+      <DropdownMenuItem>
+        <Link className='w-full' href='/admin/overview'> Admin </Link>
+      </DropdownMenuItem>
+      )}
 
       {/*Log out menu item */}
       <DropdownMenuItem className='p-0 mb-1'>

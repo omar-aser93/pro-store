@@ -92,6 +92,7 @@ export async function createPayPalOrder(orderId: string) {
       const paypalOrder = await paypal.createOrder(Number(order.totalPrice));    //Create a paypal order using paypal.createOrder()
       //Update the order with the paypal order id
       await prisma.order.update({ where: { id: orderId }, data: { paymentResult: { id: paypalOrder.id, email_address: '', status: '', pricePaid: '0',  }} });
+      
       // Return the paypal order id & success message
       return { success: true, message: 'PayPal order created successfully', data: paypalOrder.id };
     } else {
@@ -114,7 +115,7 @@ export async function approvePayPalOrder( orderId: string, data: { orderID: stri
     const captureData = await paypal.capturePayment(data.orderID)   //Check if order is already paid using paypal.capturePayment()
     //if not paid or the order id is not the same, throw an error
     if ( !captureData || captureData.id !== (order.paymentResult as paymentResultType)?.id || captureData.status !== 'COMPLETED' )  throw new Error('Error in paypal payment')
-
+  
     // Call (Update order to paid) function, pass the order id and a payment result object
     await updateOrderToPaid({ 
       orderId, paymentResult: { id: captureData.id, status: captureData.status, email_address: captureData.payer.email_address, pricePaid: captureData.purchase_units[0]?.payments?.captures[0]?.amount?.value }
@@ -122,7 +123,8 @@ export async function approvePayPalOrder( orderId: string, data: { orderID: stri
 
     revalidatePath(`/order/${orderId}`)                     //refresh the data on this page
     return { success: true, message: 'Your order has been successfully paid by PayPal'  }   //return success message
-  } catch {
+  } catch (error) {
+    console.error('Error in approvePayPalOrder:', error); // Log the error for debugging
     return { success: false, message: "something went wrong, try again later" }     //if error, return error message
   }
 }

@@ -1,10 +1,15 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { compareSync } from 'bcrypt-ts-edge';         //function to compare the encrypted db password with the form password      
-import type { NextAuthConfig } from 'next-auth';      //TS type for the Next Auth configuration
+import type { NextAuthConfig, DefaultSession } from 'next-auth';      //TS type for the Next Auth configuration
 import NextAuth from 'next-auth';                    
 import CredentialsProvider from 'next-auth/providers/credentials';   //provider to authenticate users. This just email/password. There are many other providers , such as Google, Facebook, Twitter, etc.
 import { prisma } from '@/db/prisma';
 import { PrismaAdapter } from '@auth/prisma-adapter';
+
+//TS fix for (role) in session, by default the NextAuth session user type only has a name, email and id. we extend it with extra properties (e.g. role)
+declare module 'next-auth' {
+  export interface Session { user: { role: string; } & DefaultSession['user'];  }
+}
 
 
 export const config = {
@@ -52,7 +57,7 @@ export const config = {
           await prisma.user.update({ where: { id: user.id }, data: { name: token.name } });
         }
       }   
-      // if the session user updated his name, Update the token data with the new name 
+      // if the session user updated his name, Update the token data with the new name (without re-logging)
       if (session?.user.name && trigger === 'update') { token.name = session.user.name; }
       return token;
     },   

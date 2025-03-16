@@ -1,4 +1,6 @@
-//this file is used for paypal API requests and logic, https://developer.paypal.com/api/rest/
+//1st: create app in https://developer.paypal.com/dashboard/applications/sandbox (make sure to use sandbox 'US' testing accounts https://developer.paypal.com/dashboard/accounts)
+//2nd: get the App ID and keys to add them to .env
+//3rd: this file is used for paypal API requests and logic, https://developer.paypal.com/api/rest/
 
 
 // Generate an access token: a secure identifier, allowing your app to interact with PayPal's services on behalf of a user or merchant. It grants you permissions for actions, such as creating orders, processing payments, or issuing refunds.
@@ -38,8 +40,8 @@ export const paypal = {
     const response = await fetch(`${process.env.PAYPAL_API_URL}/v2/checkout/orders/${orderId}/capture`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${accessToken}` },
-    });
+    });   
     return response.ok ? response.json() : Promise.reject(new Error(await response.text()));     //return res/error
   },
-
+  
 };

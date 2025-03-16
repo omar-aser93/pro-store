@@ -36,13 +36,13 @@ const OrderDetailsTable = ({ order, paypalClientId }: { order: Order; paypalClie
   // Creates a PayPal order using the createPayPalOrder server-action, if there is an error return a toast
   const handleCreatePayPalOrder = async () => {
     const res = await createPayPalOrder(order.id);
-    if (!res.success) return toast({ description: res.message, variant: 'destructive' });
-    return res.data;
+    if (!res.success) return toast({ description: res.message, variant: 'destructive' });    
+    return res.data;    
   };
 
   // Approves a PayPal order using the approvePayPalOrder server-action , if succes/error return a toast
   const handleApprovePayPalOrder = async (data: { orderID: string }) => {
-    const res = await approvePayPalOrder(order.id, data);
+    const res = await approvePayPalOrder(order.id, data);    
     toast({ description: res.message, variant: res.success ? 'default' : 'destructive' });
   };
 
