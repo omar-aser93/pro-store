@@ -50,7 +50,9 @@ const OrdersPage = async (props: { searchParams: Promise<{ page: string }> }) =>
                 {order.isDelivered && order.deliveredAt ? formatDateTime(order.deliveredAt).dateTime : <span className='text-red-500'>not delivered</span> }
               </TableCell>
               <TableCell>
-                <Link href={`/order/${order.id}`}> <span className='py-1 px-2 bg-black text-white rounded-md'>Details</span> </Link>
+                <Link href={`/order/${order.id}`}> 
+                  <span className='py-1 px-2 bg-black text-white rounded-md hover:bg-gray-800'>Details</span> 
+                </Link>
               </TableCell>
             </TableRow>
           ))}

@@ -2,7 +2,7 @@
 import Link from 'next/link';
 import { startTransition, useActionState } from 'react';
 import { signInWithCredentials } from '@/lib/actions/user.actions';
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 //import "react-hook-form" hook & zodResolver + the zod Schema/type from validator.ts
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -13,9 +13,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
 
+
 //Credentials sign-in form component
 const CredentialsSignInForm = () => {     
 
+  const router = useRouter();                   //useRouter hook to navigate to a page
   const searchParams = useSearchParams();       //getting searchParams in a client component using useSearchParams() hook
   const callbackUrl = searchParams.get('callbackUrl') || '/';    //we set a callbackUrl const with it's URL param value
 
@@ -27,7 +29,10 @@ const CredentialsSignInForm = () => {
 
   //function to handle "react-hook-form" submit & startTransition to allow pending state 
   const onSubmit = (values: signInType) => {       
-    startTransition(() => { action(values); });        //pass the data to the server_action
+    startTransition(() => { 
+      action(values);                                      //pass the data to the server_action
+      if (data.success) { router.push(callbackUrl);}       //if success, redirect to a previous page (callbackUrl)
+     });        
   }
 
   return (
