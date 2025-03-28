@@ -19,7 +19,7 @@ const UpdateProductPage = async (props: { params: Promise<{ id: string; }> }) =>
   return (
     <div className='space-y-8 max-w-5xl mx-auto'>
       <h1 className='h2-bold'>Update Product</h1>
-      <ProductForm type='Update' product={product} productId={product.id} />     {/* ProductForm component to update product */}
+      <ProductForm type='Update' product={product} />     {/* ProductForm component to update product */}
     </div>
   );
 };
