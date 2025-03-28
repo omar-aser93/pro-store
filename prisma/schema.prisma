@@ -1,5 +1,5 @@
 // This is the Prisma schema file, created by (npx prisma init) .. unlike mongoDB, PosgreSQL needs hosting, here we using vercel/postgres based on Neon 
-//for SQL DBs, we use migrate to create the tables, 1st (npx prisma generate) after every change in this file, then (npx prisma migrate dev --name init) to create the migration file, we check changes using (npx prisma studio)
+//for SQL DBs, we use migrate to create the tables, 1st (npx prisma migrate dev --name init) to create the migration file, then (npx prisma generate) after every change in this file, we check changes using (npx prisma studio)
 //User-Related Models: User, Account, Session, VerificationToken .. are based on the NextAuth.js schema (https://authjs.dev/getting-started/adapters/prisma)
 
 generator client {
@@ -33,6 +33,7 @@ model Product {
   banner      String?
   createdAt   DateTime @default(now()) @db.Timestamp(6)     //6 digits of Milliseconds - more precision than the default 3 digits
   OrderItem       OrderItem[]                               //relation with OrderItem model
+  Review          Review[]                                  //relation with Review model
 }
 
 
@@ -55,6 +56,7 @@ model User {
   session       Session[]               //relation with Session model
   Cart          Cart[]                  //relation with Cart model
   Order         Order[]                 //relation with Order model
+  Review        Review[]                //relation with Review model
 }
 
 
@@ -152,10 +154,27 @@ model OrderItem {
   slug      String
   image     String
   //relation to Order model: OrderItem model (orderId) field will reference to Order model (id) field , onDelete: Cascade - if an order is deleted, all the orderItems associated with that order will also be deleted
-  order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "orderItems_orderId_order_id_fk")
+  order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
   //relation to Product model: OrderItem model (productId) field will reference to Product model (id) field , onDelete: Cascade - if a product is deleted, all the orderItems associated with that product will also be deleted
-  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "orderItems_productId_product_id_fk")
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
   //composite primary key for OrderItem model. It is made up of the `orderId` and `productId` fields
   @@id([orderId, productId], map: "orderItems_orderId_productId_pk")
 }
 
+
+//Review model
+model Review {
+  //`@id` - Marks field as a primary key of the table in the db, `@default(dbgenerated("gen_random_uuid()"))` - generates a random uuid for the id field
+  id                 String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId             String   @db.Uuid               // a foreign key
+  productId          String   @db.Uuid               // a foreign key
+  rating             Int
+  title              String
+  description        String
+  isVerifiedPurchase Boolean  @default(true)
+  createdAt          DateTime @default(now()) @db.Timestamp(6)
+  //relation to Product model: Review model (productId) field will reference to Product model (id) field , onDelete: Cascade - if a product is deleted, all the reviews associated with that product will also be deleted
+  product            Product  @relation(fields: [productId], references: [id], onDelete: Cascade )
+  //relation to User model: Review model (userId) field will reference to User model (id) field , onDelete: Cascade - if a user is deleted, all the reviews associated with that user will also be deleted
+  user               User     @relation(fields: [userId], references: [id], onDelete: Cascade )
+}

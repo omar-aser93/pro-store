@@ -1,6 +1,8 @@
 import ProductCard from './product-card';
 import { Product } from '@/lib/validator';      //import the Product type from the z validator file
 
+
+//Component to display a list of products
 const ProductList = ({ data, title, limit }: { data: Product[]; title?: string; limit?: number; }) => {    
    
   const limitedData = limit ? data.slice(0, limit) : data;      // Apply limit if provided, otherwise show all products
@@ -22,4 +24,4 @@ const ProductList = ({ data, title, limit }: { data: Product[]; title?: string; 
     );
   };
   
-  export default ProductList;
+export default ProductList;

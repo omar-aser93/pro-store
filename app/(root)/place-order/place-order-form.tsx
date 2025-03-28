@@ -1,6 +1,6 @@
 'use client';
-import { Check, Loader } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Check, Loader } from 'lucide-react';                  //icons lib auto installed with shadcn
+import { Button } from '@/components/ui/button';               //shadcn button
 import { createOrder } from '@/lib/actions/order.actions';
 import { useRouter } from 'next/navigation';
 import { useTransition } from 'react';

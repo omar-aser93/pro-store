@@ -1,9 +1,15 @@
 import { notFound } from 'next/navigation';      //get not-found.tsx we created, from next/navigation (to use it manually)
+import { auth } from '@/auth';
+import Link from 'next/link';
 import ProductPrice from '@/components/shared/product/product-price';
 import { getProductBySlug } from '@/lib/actions/product.actions';
 import ProductImages from '@/components/shared/product/product-images';
 import AddToCart from '@/components/shared/product/add-to-cart';
 import { getMyCart } from '@/lib/actions/cart.actions';
+import { getReviews } from '@/lib/actions/review.actions';
+import ReviewList from './review-list';
+import ReviewForm from './review-form';
+import Rating from '@/components/shared/product/rating';
 //shadcn components
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -15,8 +21,14 @@ const ProductDetailsPage = async (props: { params: Promise<{ slug: string }> }) 
   const { slug } = await props.params;                //get the slug from the url params
   const product = await getProductBySlug(slug);       //pass product slug to getProductBySlug() server-action
   if (!product) notFound();                           //if product not found, return the not-found.tsx page we created
+  
+  //get current user session to get user id
+  const session = await auth();                       
+  const userId = session?.user?.id;
 
-  const cart = await getMyCart();                     //get user's cart using getMyCart() server-action
+  const cart = await getMyCart();                                 //get user's cart using getMyCart() server-action
+  const reviews = await getReviews({ productId: product.id });    //get product reviews using getReviews() server-action
+
   return (
     <>
       <section>
@@ -28,22 +40,15 @@ const ProductDetailsPage = async (props: { params: Promise<{ slug: string }> }) 
           {/* Details Column */}
          <div className='col-span-2 p-5'>
             <div className='flex flex-col gap-6'>
-              <p>
-                {product.brand} {product.category}
-              </p>
+              <p>{product.brand} {product.category}</p>
               <h1 className='h3-bold'>{product.name}</h1>
-              <p>
-                {product.rating} of {product.numReviews} reviews
-              </p>
+              <div> <Rating value={Number(product.rating)} /> <p>{product.numReviews} reviews</p> </div>
               {/* ProductPrice component */}
               <div className='flex flex-col gap-3 sm:flex-row sm:items-center'>
                 <ProductPrice value={Number(product.price)} className='w-24 rounded-full bg-green-100 text-green-700 px-5 py-2' />
               </div>
             </div>
-            <div className='mt-10'>
-              <p>Description:</p>
-              <p>{product.description}</p>
-            </div>
+            <div className='mt-10'> <p>Description:</p> <p>{product.description}</p> </div>
           </div>
 
           {/* Action Card */}
@@ -60,7 +65,7 @@ const ProductDetailsPage = async (props: { params: Promise<{ slug: string }> }) 
                   <div>Status</div>
                   {product.stock > 0 ? (<Badge variant='outline'>In stock</Badge>) : (<Badge variant='destructive'>Unavailable</Badge>)}
                 </div>
-                {/*if product is in stock, show Add_to_cart component & pass product details as props */}
+                {/*if product is in stock, show Add_to_cart component, pass cart & product details as props */}
                 {product.stock > 0 &&(<div className=' flex-center'>
                    <AddToCart cart={cart} item={{ productId: product.id, name: product.name, slug: product.slug, price: product.price, qty: 1, image: product.images![0] }} />
                 </div>)}
@@ -69,6 +74,21 @@ const ProductDetailsPage = async (props: { params: Promise<{ slug: string }> }) 
           </div>
         </div>
       </section>
+
+      {/* Reviews components */}
+      <section className='mt-10'>
+        <h2 className='h2-bold  mb-5'>Customer Reviews</h2>
+        <div className='space-y-4'>
+          {/*if no reviews, show (No reviews) message */}
+          {!reviews && <div>No reviews yet</div>}    
+          {/*Review Form component, After checking if user is logged in, We use the `callbackUrl` to redirect to the product page after they sign in */} 
+          {userId ? ( <ReviewForm userId={userId} productId={product.id} /> ) : (
+          <div> Please{' '}<Link className='text-primary px-2' href={`/api/auth/signin?callbackUrl=/product/${product.slug}`} > sign in </Link>{' '} to write a review </div>
+          )}  
+          {/* ReviewList component, pass userId, productId & productSlug as props */}   
+          <ReviewList reviews={reviews.data}  />      
+        </div>
+      </section>      
     </>
   );
 };

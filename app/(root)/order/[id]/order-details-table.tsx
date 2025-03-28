@@ -3,23 +3,27 @@
 import { formatCurrency, formatDateTime, formatId } from '@/lib/utils';
 import Image from 'next/image';
 import Link from 'next/link';
+import { useTransition } from 'react';
 import { Order } from '@/lib/validator';
-import { approvePayPalOrder, createPayPalOrder } from '@/lib/actions/order.actions';
+import { approvePayPalOrder, createPayPalOrder, deliverOrder, updateOrderToPaidByCOD } from '@/lib/actions/order.actions';
 import { PayPalButtons, PayPalScriptProvider, usePayPalScriptReducer} from '@paypal/react-paypal-js';    //react-paypal lib
+import StripePayment from './stripe-form';
 //shadcn components
+import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useToast } from '@/hooks/use-toast';
 
 
+
 // OrderDetailsTable component, displays a table & a payment buttons for a single order which is received as a prop
-const OrderDetailsTable = ({ order, paypalClientId }: { order: Order; paypalClientId: string; }) => {
+const OrderDetailsTable = ({isAdmin, order, paypalClientId}: { isAdmin: boolean; order: Order; paypalClientId: string;}) => {
   
-  const { toast } = useToast();                     //useToast hook to show toast messages
+  const { toast } = useToast();                            //useToast hook to show toast messages
+  const [isPending, startTransition] = useTransition();    //useTransition hook to handle a pending state
   //destructuring the recieved order data
   const { shippingAddress, orderItems, itemsPrice, taxPrice, shippingPrice, totalPrice, paymentMethod, isPaid, paidAt, isDelivered, deliveredAt, } = order;
-
 
   // Checks the loading status of the PayPal script
   function PrintLoadingState() {
@@ -108,31 +112,54 @@ const OrderDetailsTable = ({ order, paypalClientId }: { order: Order; paypalClie
         <div>
           <Card>
             <CardContent className='p-4 space-y-4 gap-4'>
-            <h2 className='text-xl pb-4'>Order Summary</h2>
-            <div className='flex justify-between'>
-                <div>Items</div>
-                <div>{formatCurrency(itemsPrice)}</div>
-            </div>
-            <div className='flex justify-between'>
-                <div>Tax</div>
-                <div>{formatCurrency(taxPrice)}</div>
-            </div>
-            <div className='flex justify-between'>
-                <div>Shipping</div>
-                <div>{formatCurrency(shippingPrice)}</div>
-            </div>
-            <div className='flex justify-between'>
-                <div>Total</div>
-                <div>{formatCurrency(totalPrice)}</div>
-            </div>
-            {/* PayPal Button.. we pass PrintLoadingState, createPayPalOrder and handleApprovePayPalOrder functions */}
-            {!isPaid && paymentMethod === 'PayPal' && (
-              <div>
-                <PayPalScriptProvider options={{ clientId: paypalClientId }}>
-                  <PrintLoadingState />
-                  <PayPalButtons createOrder={handleCreatePayPalOrder} onApprove={handleApprovePayPalOrder}  />
-                </PayPalScriptProvider>
-              </div> )}
+              <h2 className='text-xl pb-4'>Order Summary</h2>
+              <div className='flex justify-between'>
+                  <div>Items</div>
+                  <div>{formatCurrency(itemsPrice)}</div>
+              </div>
+              <div className='flex justify-between'>
+                  <div>Tax</div>
+                  <div>{formatCurrency(taxPrice)}</div>
+              </div>
+              <div className='flex justify-between'>
+                  <div>Shipping</div>
+                  <div>{formatCurrency(shippingPrice)}</div>
+              </div>
+              <div className='flex justify-between'>
+                  <div>Total</div>
+                  <div>{formatCurrency(totalPrice)}</div>
+              </div>
+
+              {/* PayPal Button.. we pass PrintLoadingState, createPayPalOrder and handleApprovePayPalOrder functions */}
+              {!isPaid && paymentMethod === 'PayPal' && (
+                <div>
+                  <PayPalScriptProvider options={{ clientId: paypalClientId }}>
+                    <PrintLoadingState />
+                    <PayPalButtons createOrder={handleCreatePayPalOrder} onApprove={handleApprovePayPalOrder} fundingSource="paypal"  />
+                  </PayPalScriptProvider>
+                </div> )}
+
+              {/* Stripe form component, testing data(Card: 4242 4242 4242 4242, Expiry: 12/34, CVV: 123, ZIP: ANy 5 digits) */}
+              {!isPaid && paymentMethod === 'Stripe' && (
+                <StripePayment priceInCents={Number(order.totalPrice) * 100} orderId={order.id} /> )
+              }
+
+              {/* Cash On Delivery Button, only visible for admin and if the order is not paid */}
+              {isAdmin && !isPaid && paymentMethod === 'CashOnDelivery' && (
+              <Button type='button' disabled={isPending} onClick={() => startTransition(async () => {
+                  const res = await updateOrderToPaidByCOD(order.id);     //pass order id to updateOrderToPaidByCOD() server-action   
+                  toast({ variant: res.success ? 'default' : 'destructive', description: res.message });
+                })}>
+                {isPending ? 'processing...' : 'Mark As Paid'}
+              </Button> )}
+              {/* Mark As Delivered Button, only visible for admin and if the order is paid & not delivered */} 
+              {isAdmin && isPaid && !isDelivered && (
+              <Button type='button' disabled={isPending} onClick={() => startTransition(async () => {
+                  const res = await deliverOrder(order.id);        //pass order id to deliverOrder() server-action
+                  toast({ variant: res.success ? 'default' : 'destructive', description: res.message });
+                })} >
+                {isPending ? 'processing...' : 'Mark As Delivered'}
+              </Button> )}
             </CardContent>
           </Card>
         </div>

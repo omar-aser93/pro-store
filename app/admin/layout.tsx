@@ -1,8 +1,8 @@
 import Image from 'next/image';
 import Link from 'next/link';
-import { Input } from '@/components/ui/input';      //shadcn component
 import AdminNav from '@/components/admin-nav';
 import Menu from '@/components/shared/header/menu';
+import AdminSearch from '@/components/shared/admin/admin-search';
 
 
 //Layout we created for admin route pages
@@ -18,12 +18,10 @@ export default async function AdminLayout({ children }: { children: React.ReactN
               <Image src='/images/logo.svg' width={48} height={48} alt={`${process.env.NEXT_PUBLIC_APP_NAME} logo`} />
             </Link>
             {/* Admin_pages Nav component */}
-            <AdminNav className='mx-6' />   
-            {/* Search Input */}
+            <AdminNav className='mx-6' /> 
             <div className='ml-auto flex items-center space-x-4'>
-              <div>
-                <Input type='search' placeholder='Search...' className='md:w-[100px] lg:w-[300px]' />
-              </div>
+              {/* Search Input component */}
+              <AdminSearch />
               {/* Right side Menu (reused component) */}
               <Menu />
             </div>

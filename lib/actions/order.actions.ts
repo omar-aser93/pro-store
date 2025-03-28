@@ -5,10 +5,32 @@ import { revalidatePath } from 'next/cache';            //used to revalidate the
 import { auth } from '@/auth';
 import { getMyCart } from './cart.actions';
 import { getUserById } from './user.actions';
-import { cartItemType, insertOrderSchema, paymentResultType } from '../validator';           //import zod Schemas/types from validator.ts
+import { cartItemType, insertOrderSchema, paymentResultType } from '../validator';      //import zod Schemas/types from validator.ts
 import { prisma } from '@/db/prisma';
 import { convertToPlainObject } from '../utils';            //utility function to convert Prisma objects to plain js objects
 import { paypal } from '../paypal';
+import { Prisma } from '@prisma/client';
+import Stripe from 'stripe';
+
+
+//Sub-function to Update Order to Paid in the DB, used in (approvePayPalOrder, updateOrderToPaidByCOD) server-actions
+async function updateOrderToPaid({ orderId, paymentResult }: { orderId: string; paymentResult?: paymentResultType}) {
+  //Find the order in the database and include the order items, if order is not found or already paid throw an error
+  const order = await prisma.order.findFirst({ where: { id: orderId }, include: { orderItems: true } });
+  if (!order) throw new Error('Order not found');
+  if (order.isPaid) throw new Error('Order is already paid');
+  // Create a prisma transaction to update the order and update products stock quantities (transaction is a way to ensure all operations are completed successfully or none of them are completed &  DB is left the same as before the transaction started)
+  await prisma.$transaction(async (tx) => {
+    // 1st: Update each item's stock quantities in the database
+    for (const item of order.orderItems) { await tx.product.update({ where: { id: item.productId }, data: { stock: { increment: -item.qty }} }); }
+    // 2nd: update the order in the database, by Setting isPaid to true
+    await tx.order.update({ where: { id: orderId }, data: { isPaid: true, paidAt: new Date(), paymentResult } });
+  });
+  // Get the updated order after the transaction, if not found throw an error
+  const updatedOrder = await prisma.order.findFirst({ where: { id: orderId }, include: { orderItems: true, user: { select: { name: true, email: true }} } });
+  if (!updatedOrder) { throw new Error('Order not found');  }
+};
+
 
 
 // Create an order server-action
@@ -67,7 +89,7 @@ export async function createOrder() {
     return { success: true, message: 'Order successfully created', redirectTo: `/order/${insertedOrderId}` };  //return success message with redirect link
   } catch (error) {
     if (isRedirectError(error)) throw error;
-    return { success: false, message: 'Something went wrong, try again later' };      //return error message
+    return { success: false, message: 'Failed to create order, try again later' };      //return error message
   }
 }
 
@@ -99,7 +121,7 @@ export async function createPayPalOrder(orderId: string) {
       throw new Error('Order not found');             //if order not found throw an error
     }
   } catch {
-    return { success: false, message: "Something went wrong, try again later" };    //if error, return error message
+    return { success: false, message: "Failed to create PayPal order, try again later" };    //if error, return error message
   }
 }
 
@@ -125,36 +147,69 @@ export async function approvePayPalOrder( orderId: string, data: { orderID: stri
     return { success: true, message: 'Your order has been successfully paid by PayPal'  }   //return success message
   } catch (error) {
     console.error('Error in approvePayPalOrder:', error); // Log the error for debugging
-    return { success: false, message: "something went wrong, try again later" }     //if error, return error message
+    return { success: false, message: "Failed to approve PayPal order, try again later" }    //if error, return error message
   }
 }
 
 
-//Function to Update Order to Paid in Database , used in approvePayPalOrder server-action
-async function updateOrderToPaid({ orderId, paymentResult }: { orderId: string; paymentResult?: paymentResultType}) {
-  //Find the order in the database and include the order items, if order is not found or already paid throw an error
-  const order = await prisma.order.findFirst({ where: { id: orderId }, include: { orderItems: true } });
-  if (!order) throw new Error('Order not found');
-  if (order.isPaid) throw new Error('Order is already paid');
 
-  // Create a prisma transaction to update the order and update products stock quantities (transaction is a way to ensure all operations are completed successfully or none of them are completed &  DB is left the same as before the transaction started)
-  await prisma.$transaction(async (tx) => {
-    // 1st: Update each item's stock quantities in the database
-    for (const item of order.orderItems) {
-      await tx.product.update({ where: { id: item.productId }, data: { stock: { increment: -item.qty }} });
-    }
-    // 2nd: update the order in the database, by Setting isPaid to true
-    await tx.order.update({ where: { id: orderId }, data: { isPaid: true, paidAt: new Date(), paymentResult } });
-  });
+//Stripe create payment intent server-action, receives the order id and the stripe client secret
+export async function createPaymentIntent(orderId: string) {
+  // Find the order in the database, if not found throw an error
+  const order = await getOrderById(orderId);
+  if (!order) throw new Error("Order not found");
+  // Check if the payment method is not Stripe or if order is paid, then throw an error
+  if (order.paymentMethod !== "Stripe" || order.isPaid) { throw new Error("Invalid payment request"); } 
 
-  // Get the updated order after the transaction, if not found throw an error
-  const updatedOrder = await prisma.order.findFirst({ where: { id: orderId }, include: { orderItems: true, user: { select: { name: true, email: true }} } });
-  if (!updatedOrder) { throw new Error('Order not found');  }
-};
+  // Initialize Stripe instance with the secret key from environment variables
+  const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string);
+  try { 
+    // Create a Stripe payment intent using the Stripe API, passing total price in cents & order id as metadata
+    const paymentIntent = await stripe.paymentIntents.create({
+      amount: Math.round(Number(order.totalPrice) * 100), currency: "USD", metadata: { orderId: order.id },
+    });  
+    return { client_secret: paymentIntent.client_secret };         // Return the client secret of the payment intent
+  } catch (error) {
+    console.error('Error in createPaymentIntent:', error);         // Log the error for debugging
+    return { success: false, message: "Failed to create payment intent, try again later" };    //if error, return error message
+  } 
+}
 
 
 
-//User's orders history server-action, receives limit & page values for pagination 
+//Update Order to Paid for (Cash On Delivery) Server-action 
+export async function updateOrderToPaidByCOD(orderId: string) {
+  try {
+    await updateOrderToPaid({ orderId });                 // Call (Update order to paid) function, pass the order id 
+    revalidatePath(`/order/${orderId}`);                  //Revalidate admin orders page to get fresh data
+    return { success: true, message: 'Order paid successfully' };           //if success, return success message
+  } catch {
+    return { success: false, message: 'Failed to update order, try again later' };   //if error, return error message
+  }
+}
+
+
+
+// Update Order To Delivered server-action
+export async function deliverOrder(orderId: string) {
+  try {
+    const order = await prisma.order.findFirst({ where: { id: orderId } });       //Find the order in the DB by id
+    if (!order) throw new Error('Order not found');                               //if not found, throw an error
+    if (!order.isPaid) throw new Error('Order is not paid');                      //if not paid, throw not-paid error
+
+    // Update the order by id, to delivered & set the deliveredAt date 
+    await prisma.order.update({ where: { id: orderId }, data: { isDelivered: true, deliveredAt: new Date() }});
+    
+    revalidatePath(`/order/${orderId}`);                        //Revalidate admin orders page to get fresh data
+    return { success: true, message: 'Order delivered successfully' };      //if success, return success message
+  } catch {
+    return { success: false, message: 'something went wrong, try again later' };    //if error, return error message
+  }
+}
+
+
+
+//User's orders history server-action (user's Orders page), receives limit & page values for pagination 
 export async function getMyOrders({ limit = Number(process.env.NEXT_PUBLIC_PAGE_SIZE), page }: { limit?: number; page: number; }) {
   // Check if the user is authenticated, if not throw an error
   const session = await auth();
@@ -173,4 +228,62 @@ export async function getMyOrders({ limit = Number(process.env.NEXT_PUBLIC_PAGE_
 
   return { data, totalPages: Math.ceil(dataCount / limit)        //res with data and the total number of pages
   };
+}
+
+
+
+// Admin Dashboard statistics server-action, Get sales data & order summary
+export async function getOrderSummary() {
+  // Get counts for each resource
+  const ordersCount = await prisma.order.count();
+  const productsCount = await prisma.product.count();
+  const usersCount = await prisma.user.count();
+
+  // Calculate total sales, `aggregate` method for summing up the totalPrice field across all orders.
+  const totalSales = await prisma.order.aggregate({ _sum: { totalPrice: true } });
+
+  // Get monthly sales data (grouped by month & year [formatted as MM/YY]), `$queryRaw` method for raw SQL queries 
+  const salesDataRaw = await prisma.$queryRaw<Array<{ month: string; totalSales: Prisma.Decimal }>
+  >`SELECT to_char("createdAt", 'MM/YY') as "month", sum("totalPrice") as "totalSales" FROM "Order" GROUP BY to_char("createdAt", 'MM/YY')`;
+
+   // inside the salesDataRaw array of objects we fetched, We Convert every totalSales value from Decimal to number
+  const salesData: { month: string; totalSales: number; }[] = salesDataRaw.map((entry) => ({ month: entry.month, totalSales: Number(entry.totalSales) }));
+
+  // Get latest sales using findMany(), order by createdAt in a desc order, take last 6 items, include related user model data
+  const latestOrders = await prisma.order.findMany({ orderBy: { createdAt: 'desc' }, include: { user: { select: { name: true } }}, take: 6 });
+
+  return { ordersCount, productsCount, usersCount, totalSales, latestOrders, salesData };   //res with all the data we calculated
+}
+
+
+
+// Get All Orders server-action (Admin page), receives query for search + limit & page values for pagination
+export async function getAllOrders({query, limit = Number(process.env.NEXT_PUBLIC_PAGE_SIZE), page }: {query: string; limit?: number; page: number; }) {
+  //create a filter object.. checks if we recieved a search query, then return object contains the filter {key: query_value}  
+  const queryFilter: Prisma.OrderWhereInput = query && query !== 'all' ? { user: { name: { contains: query, mode: 'insensitive' } as Prisma.StringFilter }} : {};
+  // Find & Get All the orders from the database using Prisma.findMany()
+  const data = await prisma.order.findMany({
+    where: { ...queryFilter },                             //Apply the filter 
+    orderBy: { createdAt: 'desc' },                        //order by createdAt in a descending order
+    take: limit,                                           //take the limit (items per page)
+    skip: (page - 1) * limit,                              //paginate the data, skip (page number) * (items per page)
+    include: { user: { select: { name: true } } },         //include the user model data
+  });
+
+  const dataCount = await prisma.order.count();     //get the total number of orders to calculate the total number of pages
+
+  return { data, totalPages: Math.ceil(dataCount / limit) };       //res with data and the total number of pages
+}
+
+
+
+// Delete Order server-action, receives the order id
+export async function deleteOrder(id: string) {
+  try {
+    await prisma.order.delete({ where: { id } });                 //delete the order by id from the database
+    revalidatePath('/admin/orders');                              //Revalidate admin orders page to get fresh data
+    return { success: true, message: 'Order deleted successfully' };       //if success res with success message       
+  } catch {
+    return { success: false, message: "Failed to delete order, try again later" };    //if error res with error message
+  }
 }

@@ -54,7 +54,7 @@ export function formatCurrency(amount: number | string | null) {
 
 
 const NUMBER_FORMATTER = new Intl.NumberFormat('en-US');
-// Format Number using the formatter above
+// Format Number to a string with commas using the formatter above
 export function formatNumber(number: number) {
   return NUMBER_FORMATTER.format(number);
 }

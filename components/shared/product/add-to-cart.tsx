@@ -22,16 +22,14 @@ const AddToCart = ({ cart, item }: { cart: Cart | undefined; item: cartItemType;
   const handleAddToCart = async () => {    
     startTransition(async () => { 
       const res = await addItemToCart(item);           //Execute addItemToCart server-action & pass the product
-
+      
       // if not successful, Display error toast message (coming from the server-action) 
-      if (!res.success) { 
-        toast({ variant: 'destructive', description: res.message });
+      if (!res.success) { toast({ variant: 'destructive', description: res.message });
         return;                     //return out to stop the function
       }
 
       // if success, Display success toast message (description) & action button to navigate to cart page using router.push()
-      toast({
-        description: res.message,
+      toast({ description: res.message,
         action: (
           <ToastAction onClick={() => router.push('/cart')} className='bg-primary text-white hover:bg-gray-800' altText='Go to cart' >
             Go to cart
@@ -46,12 +44,8 @@ const AddToCart = ({ cart, item }: { cart: Cart | undefined; item: cartItemType;
   const handleRemoveFromCart = async () => {
     startTransition(async () => { 
       const res = await removeItemFromCart(item.productId);    //Execute removeItemFromCart server-action & pass the product ID
-
       // if not successful, Display error toast message (coming from the server-action)
-      toast({
-        variant: res.success ? 'default' : 'destructive',
-        description: res.message,
-      });
+      toast({ variant: res.success ? 'default' : 'destructive', description: res.message });
       return;   //return out to stop the function
     });
   };
@@ -64,11 +58,11 @@ const AddToCart = ({ cart, item }: { cart: Cart | undefined; item: cartItemType;
   return existItem ? (
     <div>
       <Button type='button' variant='outline' disabled={isPending} onClick={handleRemoveFromCart}>
-      {isPending ? (<Loader className='w-4 h-4  animate-spin' />) : (<Minus className='w-4 h-4' />)}
+        {isPending ? (<Loader className='w-4 h-4  animate-spin' />) : (<Minus className='w-4 h-4' />)}
       </Button>
       <span className='px-3'>{existItem.qty}</span>
       <Button type='button' variant='outline' disabled={isPending} onClick={handleAddToCart}> 
-      {isPending ? (<Loader className='w-4 h-4 animate-spin' />) : (<Plus className='w-4 h-4' />)} 
+        {isPending ? (<Loader className='w-4 h-4 animate-spin' />) : (<Plus className='w-4 h-4' />)} 
       </Button>
     </div>
   ) : (

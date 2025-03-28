@@ -4,6 +4,7 @@ import { getMyOrders } from '@/lib/actions/order.actions';
 import { formatCurrency, formatDateTime, formatId } from '@/lib/utils';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow} from '@/components/ui/table';   //shadcn table
 import Pagination from '@/components/shared/pagination';
+import { Button } from '@/components/ui/button';
 
 //set page title to "Shipping Address"
 export const metadata: Metadata = {
@@ -17,7 +18,6 @@ const OrdersPage = async (props: { searchParams: Promise<{ page: string }> }) =>
   const { page } = await props.searchParams;                       //get page_number param from the URL searchParams
   //pass page number to getMyOrders() server-action & set default page number to 1, also we can pass limit (items per page) if we want 
   const orders = await getMyOrders({ page: Number(page) || 1 });   
-
 
   return (
     <div className='space-y-2'>
@@ -50,9 +50,7 @@ const OrdersPage = async (props: { searchParams: Promise<{ page: string }> }) =>
                 {order.isDelivered && order.deliveredAt ? formatDateTime(order.deliveredAt).dateTime : <span className='text-red-500'>not delivered</span> }
               </TableCell>
               <TableCell>
-                <Link href={`/order/${order.id}`}> 
-                  <span className='py-1 px-2 bg-black text-white rounded-md hover:bg-gray-800'>Details</span> 
-                </Link>
+                <Button variant='outline' size='sm'><Link href={`/order/${order.id}`}>Details</Link></Button>  {/* order details link */}
               </TableCell>
             </TableRow>
           ))}

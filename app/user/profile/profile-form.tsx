@@ -56,7 +56,7 @@ const ProfileForm = () => {
               </FormItem>
            )} />
         </div>
-        {/* Submit button, disabled if form is submitting (using formState.isSubmitting from "react-hook-form").. useful only when form submitting doesn't redirect */}
+        {/* Submit button, disabled if form is submitting (using formState.isSubmitting from "react-hook-form") */}
         <Button type='submit' size='lg' disabled={form.formState.isSubmitting} className='button col-span-2 w-full' >
           {form.formState.isSubmitting ? 'Submitting...' : 'Update Profile'}
         </Button>

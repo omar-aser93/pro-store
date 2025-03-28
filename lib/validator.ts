@@ -29,6 +29,14 @@ export type Product = z.infer<typeof insertProductSchema> & {
 };
 
 
+// Zod Schema for validating updating a product (it inherits all insertProductSchema items & extends it with id field)
+export const updateProductSchema = insertProductSchema.extend({
+  id: z.string().min(1, 'Id is required'),
+});
+//We use `z.infer` to create an updateProduct TS type
+export type updateProductType = z.infer<typeof updateProductSchema>;
+
+
 //Zod Schema for validating signing in a user
 export const signInFormSchema = z.object({
   email: z.string().email('Invalid email address').min(3, 'Email must be at least 3 characters'),
@@ -38,7 +46,7 @@ export const signInFormSchema = z.object({
 export type signInType = z.infer<typeof signInFormSchema> & { callbackUrl: string };
 
 
-//Zod Schema for signing up a user
+//Zod Schema for validating signing up a user
 export const signUpFormSchema = z.object({
   name: z.string().min(3, "Name must be at least 3 characters"),
   email: z.string().min(3, "Email must be at least 3 characters"),
@@ -51,7 +59,25 @@ export const signUpFormSchema = z.object({
 export type signUpType = z.infer<typeof signUpFormSchema> & { callbackUrl: string };
 
 
-//Zod Schema for Cart Item
+// Zod Schema for validating Update Profile 
+export const updateProfileSchema = z.object({
+  name: z.string().min(3, 'Name must be at least 3 characters'),
+  email: z.string().min(3, 'Email must be at least 3 characters'),
+});
+//We use `z.infer` to create an updateProfile TS type
+export type updateProfileType = z.infer<typeof updateProfileSchema>;
+
+
+// Zod Schema for validating Update User by admin (it inherits all updateProfileSchema items & extends it with id & role)
+export const updateUserSchema = updateProfileSchema.extend({
+  id: z.string().min(1, 'Id is required'),  
+  role: z.string().min(1, 'Role is required'),
+});
+//We use `z.infer` to create an updateUser TS type
+export type updateUserType = z.infer<typeof updateUserSchema>;
+
+
+//Zod Schema for validating Cart Item
 export const cartItemSchema = z.object({
   productId: z.string().min(1, 'Product is required'),
   name: z.string().min(1, 'Name is required'),
@@ -64,7 +90,7 @@ export const cartItemSchema = z.object({
 export type cartItemType = z.infer<typeof cartItemSchema>;
 
 
-//Zod Schema for insert Cart
+//Zod Schema for validating insert Cart
 export const insertCartSchema = z.object({
   items: z.array(cartItemSchema),                     //array of cartItem Schemas (we created it above this schema)
   itemsPrice: currency,
@@ -78,7 +104,7 @@ export const insertCartSchema = z.object({
 export type Cart = z.infer<typeof insertCartSchema>;
 
 
-//Zod Schema for shipping Address at checkout
+//Zod Schema for validating shipping Address at checkout
 export const shippingAddressSchema = z.object({
   fullName: z.string().min(3, 'Name must be at least 3 characters'),
   streetAddress: z.string().min(3, 'Address must be at least 3 characters'),
@@ -92,7 +118,7 @@ export const shippingAddressSchema = z.object({
 export type shippingAddressType = z.infer<typeof shippingAddressSchema>;
 
 
-//Zod Schema for Payment methodes (we defined 3 types of payment methods in the .env file)
+//Zod Schema for validating Payment methodes (we defined 3 types of payment methods in the .env file)
 export const paymentMethodSchema = z.object({
   type: z.string().min(1, 'Pyament method is required'), })
   .refine((data) => process.env.NEXT_PUBLIC_PAYMENT_METHODS?.split(', ').includes(data.type), { path: ['type'], message: 'Invalid payment method'
@@ -101,7 +127,7 @@ export const paymentMethodSchema = z.object({
 export type paymentMethodType = z.infer<typeof paymentMethodSchema>;
 
 
-//Zod Schema for inserting an Order
+//Zod Schema for validating inserting an Order
 export const insertOrderSchema = z.object({
   userId: z.string().min(1, 'User is required'),
   itemsPrice: currency,
@@ -126,7 +152,7 @@ export type Order = z.infer<typeof insertOrderSchema> & {
 };
 
 
-//Zod Schema for Order Item
+//Zod Schema for validating Order Item
 export const insertOrderItemSchema = z.object({
   productId: z.string(),
   slug: z.string(),
@@ -139,7 +165,7 @@ export const insertOrderItemSchema = z.object({
 export type OrderItem = z.infer<typeof insertOrderItemSchema>;
 
 
-//Zod Schema for paypal payment result
+//Zod Schema for validating paypal payment result
 export const paymentResultSchema = z.object({
   id: z.string(),
   status: z.string(),
@@ -150,11 +176,15 @@ export const paymentResultSchema = z.object({
 export type paymentResultType = z.infer<typeof paymentResultSchema>;
 
 
-
-// Zod Schema for Update Profile 
-export const updateProfileSchema = z.object({
-  name: z.string().min(3, 'Name must be at least 3 characters'),
-  email: z.string().min(3, 'Email must be at least 3 characters'),
+// Zod Schema for validating Insert a Review 
+export const insertReviewSchema = z.object({
+  title: z.string().min(3, 'Title must be at least 3 characters'),
+  description: z.string().min(3, 'Description must be at least 3 characters'),
+  productId: z.string().min(1, 'Product is required'),
+  userId: z.string().min(1, 'User is required'),
+  rating: z.coerce.number().int().min(1, 'Rating must be at least 1').max(5, 'Rating must be at most 5'),
 });
-//We use `z.infer` to create an updateProfile TS type
-export type updateProfileType = z.infer<typeof updateProfileSchema>;
+//We use `z.infer` to create a Review TS type
+export type Review = z.infer<typeof insertReviewSchema> & { id: string; createdAt: Date; user?: { name: string }; };
+
+

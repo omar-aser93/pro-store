@@ -2,8 +2,10 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';         //shadcn card component
 import ProductPrice from './product-price';
+import Rating from './rating';
 import { Product } from '@/lib/validator';      //import the Product type from the z validator file
 
+//Product card component, receives a product as a prop
 const ProductCard = ({ product }: { product: Product }) => {
   return (
     <Card className='w-full max-w-sm'>
@@ -20,7 +22,7 @@ const ProductCard = ({ product }: { product: Product }) => {
             <h2 className='text-sm font-medium'>{product.name}</h2>
           </Link>
         <div className='flex-between gap-4'>
-          <p>{product.rating} stars</p>
+          <Rating value={Number(product.rating)} />              {/* Pass rating as a number to the RATING component*/}
           {product.stock > 0 ? (
             <ProductPrice value={Number(product.price)} />       // Pass price as a number to the product price component
           ) : (

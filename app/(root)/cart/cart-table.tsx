@@ -18,7 +18,7 @@ const CartTable = ({ cart }: { cart?: Cart }) => {
 
   const router = useRouter();                    //useRouter hook to navigate to a page
   const { toast } = useToast();                  //useToast hook from shadcn, used to display a toast messages
-  //useTransition hook, we wrap startTransition() around conent of async function, then use isPending to to display a loading indicator
+  //useTransition hook, we wrap startTransition() around content of async function, then use isPending to to display a loading indicator
   const [isPending, startTransition] = useTransition();    
 
   return (

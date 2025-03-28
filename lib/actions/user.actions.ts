@@ -2,11 +2,14 @@
 
 import { isRedirectError } from 'next/dist/client/components/redirect-error';   //`isRedirectError` function used to check if error is a redirect error
 import { auth, signIn, signOut } from '@/auth';      //import the signIn and signOut functions from auth.ts
+import { revalidatePath } from 'next/cache';         //used to revalidate the cache of a specific path (we use it with POST/PUT/DELETE actions)
 //import zod Schemas/types from validator.ts
-import { paymentMethodSchema, paymentMethodType, shippingAddressSchema, shippingAddressType, signInType, signUpType} from '../validator';     
+import { paymentMethodSchema, paymentMethodType, shippingAddressSchema, shippingAddressType, signInType, signUpType, updateUserType} from '../validator';     
 import { hashSync } from 'bcrypt-ts-edge';           //hashing function from bcrypt-ts library
 import { prisma } from '@/db/prisma';                //import the Prisma client from prisma.ts, the file we created
-import { cookies } from 'next/headers';
+import { cookies } from 'next/headers';              //Nextjs cookies, we can set it in server-actions & get it in components
+import { Prisma } from '@prisma/client';
+
 
 
 // Sign in the user with email/password server-action
@@ -24,8 +27,7 @@ export async function signInWithCredentials(prevState: unknown, data: signInType
         await prisma.cart.deleteMany({ where: { userId: user?.id } });        //clear & Delete any existing user cart        
         await prisma.cart.update({ where: { id: sessionCart.id }, data: { userId: user?.id } });  //Assign the guest cart to the logged-in user
       }
-    }
-   
+    }   
     return { success: true, message: "Signed in successfully" };   //return success message, will be used in useActionState()
   } catch (error) {
     if (isRedirectError(error)) { throw error; }
@@ -67,7 +69,6 @@ export async function signUp(prevState: unknown, data: signUpType) {
         await prisma.cart.update({ where: { id: sessionCart.id }, data: { userId: user?.id } });  //Assign the guest cart to the logged-in user
       }
     }
-
     return { success: true, message: 'User created successfully' };                 //return success message, will be used in useActionState()
   } catch (error) {
     if (isRedirectError(error)) { throw error; }  
@@ -99,7 +100,7 @@ export async function updateUserAddress(data: shippingAddressType) {
     await prisma.user.update({ where: { id: currentUser.id }, data: { address } }); 
     return { success: true, message: 'User updated successfully' };                //return success message
   } catch {
-    return { success: false, message: 'something went wrong, try again later' };   //return error message
+    return { success: false, message: 'Failed to update address, try again later' };   //return error message
   }
 }
 
@@ -121,7 +122,7 @@ export async function updateUserPaymentMethod( data: paymentMethodType) {
     await prisma.user.update({ where: { id: currentUser.id }, data: { paymentMethod: paymentMethod.type },});
     return { success: true, message: 'User updated successfully', };                  //return success message
   } catch {
-    return { success: false, message: 'something went wrong, try again later'  };     //return error message
+    return { success: false, message: 'Failed to update payment method, try again later'  };    //return error message
   }
 }
 
@@ -142,6 +143,50 @@ export async function updateProfile(user: { name: string; email: string }) {
     await prisma.user.update({ where: { id: currentUser.id }, data: { name: user.name, } });
     return { success: true, message: 'User updated successfully', };                  //return success message
   } catch {
-    return { success: false, message: 'something went wrong, try again later'  };     //return error message
+    return { success: false, message: 'Failed to update profile info, try again later'  };     //return error message
+  }
+}
+
+
+
+// Get all users server-action (Admin page), receives query for search + limit & page values for pagination
+export async function getAllUsers({query, limit = Number(process.env.NEXT_PUBLIC_PAGE_SIZE), page }: { query: string; limit?: number; page: number;}) {
+  //create a filter object.. checks if we recieved a search query, then return object contains the filter {key: query_value}  
+  const queryFilter: Prisma.UserWhereInput = query && query !== 'all' ? { name: { contains: query, mode: 'insensitive' } as Prisma.StringFilter } : {};
+  // Find & Get all the Users from the database using Prisma.findMany()
+  const data = await prisma.user.findMany({
+    where: { ...queryFilter },                           //Apply the filter 
+    orderBy: { createdAt: 'desc' },                      //order by createdAt in a descending order
+    take: limit,                                         //take the limit (items per page)
+    skip: (page - 1) * limit,                            //paginate the data, skip (page number) * (items per page)
+  });
+
+  const dataCount = await prisma.user.count();           //get the total number of users to calculate the total pages
+  return { data, totalPages: Math.ceil(dataCount / limit) };     //res with data and the total number of pages
+}
+
+
+
+// Delete user by ID server-action
+export async function deleteUser(id: string) {
+  try {
+    await prisma.user.delete({ where: { id } });        //delete the user from the DB by id
+    revalidatePath('/admin/users');                     //Revalidate admin users page to get fresh data
+    return { success: true, message: 'User deleted successfully' };       //if success, return success message
+  } catch {
+    return { success: false, message: 'Failed to delete user, try again later' };    //if error, return error message
+  }
+}
+
+
+
+// Update user by ID server-action, recieves the form data & update use's data with it
+export async function updateUser(user: updateUserType) {
+  try {
+    await prisma.user.update({ where: { id: user.id }, data: { name: user.name, role: user.role } });  //update user data in the DB by id
+    revalidatePath('/admin/users');                                      //Revalidate admin users page to get fresh data
+    return { success: true, message: 'User updated successfully' };      //if success, return success message
+  } catch {
+    return { success: false, message: 'Failed to update user, try again later' };    //if error, return error message
   }
 }
