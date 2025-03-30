@@ -2,7 +2,8 @@ import { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import CredentialsSignInForm from './credentials-signin-form';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";    //shadcn card component
+import GoogleSignin from "./google-signin-button"; 
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";   //shadcn Card component
 
 //set page title to "Sign In"
 export const metadata: Metadata = {
@@ -25,7 +26,12 @@ const SignIn = async () => {
           <CardDescription className="text-center"> Select a method to sign in to your account </CardDescription>
         </CardHeader>
         {/* Form component */}
-        <CardContent className="space-y-4"><CredentialsSignInForm /></CardContent>
+        <CardContent className="space-y-3"><CredentialsSignInForm /></CardContent>
+        <hr className="w-[90%] mx-auto mb-4" />
+        {/* Google sign in button */}
+        <CardContent className="space-y-3">          
+          <GoogleSignin /> 
+        </CardContent>
       </Card>
     </div>
   );

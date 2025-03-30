@@ -22,12 +22,13 @@ const StripePayment = ({ priceInCents, orderId }: { priceInCents: number; orderI
       const response = await createPaymentIntent(orderId);      //createPaymentIntent server action to get client_secret
       // If the response is successful, set the client secret state, otherwise set the error message
       if (response.client_secret) {
-        setClientSecret(response.client_secret);
+        setClientSecret(response.client_secret);        
       } else {
         setClientSecretErr(response.message || "Something went wrong.");
       }
     };
     fetchPaymentIntent();             // Call the function 
+    
   }, [orderId]);
 
   // Check if clientSecret is null or has an error, to display loading / error message

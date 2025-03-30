@@ -1,7 +1,9 @@
+import Link from 'next/link';
 import ProductList from '@/components/shared/product/product-list';
 import ProductCarousel from '@/components/shared/product/product-carousel';
 import { getFeaturedProducts, getLatestProducts } from '@/lib/actions/product.actions';
-import Link from 'next/link';
+import IconBoxes from '@/components/icon-boxes';
+import DealCountdown from '@/components/deal-countdown';
 
 
 // Home Page, displays featured products carousel, latest products list & ....
@@ -15,8 +17,10 @@ const HomePage = async () => {
       <ProductList title='Newest Arrivals' data={latestProducts} limit={4}/>           {/* Latest products list */}
       {/* Link to All Products (filtering) page */}
       <div className='flex justify-center items-center my-8'>
-        <Link href='/search' className='px-8 py-4 text-lg font-semibold rounded-md bg-slate-950 text-white hover:opacity-80' > View All Products </Link>        
+        <Link href='/search' className='px-8 py-4 text-md font-semibold rounded-md bg-slate-950 text-white hover:opacity-80' > View All Products </Link>        
       </div>
+      <IconBoxes />               {/* Icon boxes component */}
+      <DealCountdown />           {/* Deal countdown component */}
     </div>
   );
 };

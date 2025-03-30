@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 };
 
 
-// SuccessPage page, displays a success message after a successful payment
+// Stripe SuccessPage page, displays a success message after a successful payment
 const SuccessPage = async (props: { params: Promise<{ id: string }>; searchParams: Promise<{ payment_intent: string }>; }) => {
 
   const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string);    // Create a Stripe instance

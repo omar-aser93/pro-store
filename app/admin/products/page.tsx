@@ -77,7 +77,7 @@ const ProductsPage = async (props: {searchParams: Promise<{ query: string; page:
         </Table>
 
         {/* Pagination, if total pages are more than 1 */}
-        {products?.totalPages && products.totalPages > 1 && (<Pagination page={searchParams.page} totalPages={products.totalPages} />)}
+        {products.totalPages > 1 && (<Pagination page={Number(searchParams.page) || 1} totalPages={products.totalPages} />)}
       </div>
     </div>
   );

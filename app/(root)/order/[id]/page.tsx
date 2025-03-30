@@ -2,7 +2,7 @@ import { getOrderById } from '@/lib/actions/order.actions';
 import { notFound } from 'next/navigation';        //get not-found.tsx we created, from next/navigation (to use it manually)
 import OrderDetailsTable from './order-details-table';
 import { auth } from '@/auth';
-import { shippingAddressType } from '@/lib/validator';
+import { paymentResultType, shippingAddressType } from '@/lib/validator';
 
 //set page title to "Order Details"
 export const metadata = {
@@ -19,11 +19,11 @@ const OrderDetailsPage = async (props: { params: Promise<{ id: string }> }) => {
   if (!order) notFound();                           //if order not found, return the not-found.tsx page we created
 
   return (  
-   //Pass isAdmin, the order data to the OrderDetailsTable component, shippingAddress have a specific type so we cast it to shippingAddressType to avoid TS error
+   //Pass isAdmin, the order data to the OrderDetailsTable component, shippingAddress/paymentResult have a specific types so we cast them to their type to avoid TS error
    //we also pass PAYPAL_CLIENT_ID.. because it doesn't have NEXT_PUBLIC_ prefix, so we can only access it in server-component
    <OrderDetailsTable 
      isAdmin={session?.user.role === 'admin' || false}
-     order={{ ...order, shippingAddress: order.shippingAddress as shippingAddressType }}     
+     order={{ ...order, shippingAddress: order.shippingAddress as shippingAddressType, paymentResult: order.paymentResult as paymentResultType }}     
      paypalClientId={process.env.PAYPAL_CLIENT_ID || 'sb'}     
    />
   );

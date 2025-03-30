@@ -37,6 +37,26 @@ export async function signInWithCredentials(prevState: unknown, data: signInType
 
 
 
+// handle Google User Sign-in server-action
+export async function handleGoogleUser(user: { name: string; email: string; image: string }) {
+  try {
+    // Check if the user already exists
+    const existingUser = await prisma.user.findUnique({ where: { email: user.email } });
+
+    if (!existingUser) {
+      // ✅ Create a new user if they don’t exist
+      return await prisma.user.create({ data: { name: user.name, email: user.email, image: user.image } });
+    }
+
+    return existingUser;            // Return existing user to maintain session consistency
+  } catch (error) {
+    console.error("Error handling Google user:", error);
+    throw new Error("Failed to process Google sign-in.");
+  }
+}
+
+
+
 // Sign the user out server-action
 export async function signOutUser() {
   await signOut({redirect: true});                       //Next_Auth signOut() function    

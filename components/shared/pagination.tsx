@@ -8,7 +8,7 @@ const Pagination = ({ page, totalPages, urlParamName = 'page' }: { page: number 
   
   const router = useRouter();                    //useRouter() hook to dynamically navigate to a page
   const searchParams = useSearchParams();        //useSearchParams() hook to get URL searchParams in a client-component
-
+  
   //Function to navigate to a specific pagination page, it receives the page number
   const goToPage = (pageNumber: number) => {
     if (pageNumber < 1 || pageNumber > totalPages) return;      //if page num is negative or > total pages, return out
@@ -18,6 +18,30 @@ const Pagination = ({ page, totalPages, urlParamName = 'page' }: { page: number 
     router.push(`?${params.toString()}`);                       //push to the needed page based on the param
   };
 
+
+  // Function to generate page numbers with truncation (e.g., "1 ... 5 6 7 ... 10")
+  const getPageNumbers = () => {
+    const pages: (number | string)[] = [];       // Array to hold page numbers and ellipses ("...")
+    const range = 2;                             // Show 2 pages before and after the current page
+
+    // Show all pages if totalPages is small (<= 7)
+    if (totalPages <= 7) { return Array.from({ length: totalPages }, (_, i) => i + 1); } 
+
+    pages.push(1);                                            // Always include first page    
+    if (Number(page) - range > 2) { pages.push('...') }       // Show ellipsis if currentPage is far from first page
+    
+    // Generate middle pages
+    for (let i = Math.max(2, Number(page) - range); i <= Math.min(totalPages - 1, Number(page) + range); i++) {
+      pages.push(i);
+    }    
+   
+    if (Number(page) + range < totalPages - 1) { pages.push('...') }  // Show ellipsis if there's a gap before last page
+    pages.push(totalPages);                                           // Always include last page
+
+    return pages;                      // Return the array of page numbers and ellipses
+  };
+  
+
   return (
     <div className='flex gap-2 my-3'>
       {/* prev button, onClick will decrement page number .. also, will be disabled if page number is 1 */}
@@ -26,11 +50,12 @@ const Pagination = ({ page, totalPages, urlParamName = 'page' }: { page: number 
       </Button>
 
       {/* Page Numbers buttons, create array of numbers from 1 to total pages, then map through it */}
-      {Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNumber) => (
-        <Button key={pageNumber} onClick={() => goToPage(pageNumber)} variant={pageNumber === page ? 'default' : 'outline'} className="w-10" >
-          {pageNumber}
-        </Button>
-      ))}
+      {getPageNumbers().map((pageNumber) =>
+        pageNumber === '...' ? (<span key={pageNumber} className="px-3 py-2"> ... </span> ) : (
+          <Button key={pageNumber} onClick={() => goToPage(Number(pageNumber))} variant={Number(pageNumber) === Number(page) ? 'default' : 'outline'} className="w-10" >
+            {pageNumber}
+          </Button> 
+        ) )}
 
       {/* Next button, onClick will increment page number .. also, will be disabled for last page (page number is equal to total pages) */}
       <Button onClick={() => goToPage(Number(page) + 1)} disabled={Number(page) >= totalPages} size='lg' variant='outline' className='w-28' > 

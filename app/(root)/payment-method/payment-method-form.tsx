@@ -63,7 +63,7 @@ const PaymentMethodForm = ({ preferredPaymentMethod }: { preferredPaymentMethod:
                           <FormControl>
                             <RadioGroupItem value={paymentMethod} checked={field.value === paymentMethod} />
                           </FormControl>
-                          <FormLabel className='font-normal'> {paymentMethod} </FormLabel>
+                          <FormLabel className='font-normal cursor-pointer'> {paymentMethod} </FormLabel>
                         </FormItem>
                       ))}
                     </RadioGroup>

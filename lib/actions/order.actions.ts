@@ -5,16 +5,17 @@ import { revalidatePath } from 'next/cache';            //used to revalidate the
 import { auth } from '@/auth';
 import { getMyCart } from './cart.actions';
 import { getUserById } from './user.actions';
-import { cartItemType, insertOrderSchema, paymentResultType } from '../validator';      //import zod Schemas/types from validator.ts
+import { cartItemType, insertOrderSchema, paymentResultType, shippingAddressType } from '../validator';      //import zod Schemas/types from validator.ts
 import { prisma } from '@/db/prisma';
-import { convertToPlainObject } from '../utils';            //utility function to convert Prisma objects to plain js objects
+import { convertToPlainObject } from '../utils';           //utility function to convert Prisma objects to plain js objects
 import { paypal } from '../paypal';
 import { Prisma } from '@prisma/client';
 import Stripe from 'stripe';
+import { sendPurchaseReceipt } from '@/email';            //import the sendPurchaseReceipt Function we created
 
 
-//Sub-function to Update Order to Paid in the DB, used in (approvePayPalOrder, updateOrderToPaidByCOD) server-actions
-async function updateOrderToPaid({ orderId, paymentResult }: { orderId: string; paymentResult?: paymentResultType}) {
+//Function to Update Order to Paid in the DB, used inside (Stripe webhook) + (approvePayPalOrder, updateOrderToPaidByCOD) server-actions
+export async function updateOrderToPaid({ orderId, paymentResult }: { orderId: string; paymentResult?: paymentResultType}) {
   //Find the order in the database and include the order items, if order is not found or already paid throw an error
   const order = await prisma.order.findFirst({ where: { id: orderId }, include: { orderItems: true } });
   if (!order) throw new Error('Order not found');
@@ -28,7 +29,9 @@ async function updateOrderToPaid({ orderId, paymentResult }: { orderId: string; 
   });
   // Get the updated order after the transaction, if not found throw an error
   const updatedOrder = await prisma.order.findFirst({ where: { id: orderId }, include: { orderItems: true, user: { select: { name: true, email: true }} } });
-  if (!updatedOrder) { throw new Error('Order not found');  }
+  if (!updatedOrder) { throw new Error('Order not found'); }
+  // Send the purchase receipt email with the updated order, shippingAddress/paymentResult have a specific types so we cast them to their type to avoid TS error
+  sendPurchaseReceipt({ order: {...updatedOrder, shippingAddress: updatedOrder?.shippingAddress as  shippingAddressType, paymentResult: updatedOrder?.paymentResult as paymentResultType }});  
 };
 
 

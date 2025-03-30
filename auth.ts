@@ -2,9 +2,11 @@
 import { compareSync } from 'bcrypt-ts-edge';         //function to compare the encrypted db password with the form password      
 import type { NextAuthConfig, DefaultSession } from 'next-auth';      //TS type for the Next Auth configuration
 import NextAuth from 'next-auth';                    
-import CredentialsProvider from 'next-auth/providers/credentials';   //provider to authenticate users. This just email/password. There are many other providers , such as Google, Facebook, Twitter, etc.
+import CredentialsProvider from 'next-auth/providers/credentials';   //email/password provider to authenticate users. 
+import GoogleProvider from 'next-auth/providers/google';             //Google provider to authenticate users.
 import { prisma } from '@/db/prisma';
 import { PrismaAdapter } from '@auth/prisma-adapter';
+import { handleGoogleUser } from './lib/actions/user.actions';       //server action to create  new user in the db when signing in with Google
 
 //TS fix for (role) in session, by default the NextAuth session user type only has a name, email and id. we extend it with extra properties (e.g. role)
 declare module 'next-auth' {
@@ -18,6 +20,7 @@ export const config = {
   adapter: PrismaAdapter(prisma),                            //using Prisma_adapter to integrate Next_Auth with Prisma
   //The providers are the different ways to authenticate user. We are using the `CredentialsProvider` which is a simple email/password. 
   providers: [
+    //Credentials provider to authenticate users (sign in with email and password)
     CredentialsProvider({
       credentials: { email: { type: 'email' }, password: { type: 'password' } },
       //The `authorize` function is called when the user tries to authenticate. 
@@ -34,6 +37,12 @@ export const config = {
         // If user doesn't exist or password is incorrect, return null
         return null;
       },
+    }),
+    //Google provider to authenticate users (sign in with Google)
+    GoogleProvider({
+      clientId: process.env.GOOGLE_CLIENT_ID!,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+      allowDangerousEmailAccountLinking: true    // Allow linking of Google account with existing email accounts (dangerous, use with caution)       
     }),
   ],
   //`session` callback is called whenever a session is accessed or created.
@@ -61,6 +70,13 @@ export const config = {
       if (session?.user.name && trigger === 'update') { token.name = session.user.name; }
       return token;
     },   
+    //signIn callback, if user is signing with google, we use handleGoogleUser() server action to create a new user in the db
+    async signIn({ user, account }) {
+      if (account?.provider === "google") {
+        await handleGoogleUser({ name: user.name!, email: user.email!, image: user.image! });          
+      }
+      return true;
+    }
   },
 } satisfies NextAuthConfig;
 
