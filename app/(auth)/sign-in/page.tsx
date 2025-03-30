@@ -29,9 +29,7 @@ const SignIn = async () => {
         <CardContent className="space-y-3"><CredentialsSignInForm /></CardContent>
         <hr className="w-[90%] mx-auto mb-4" />
         {/* Google sign in button */}
-        <CardContent className="space-y-3">          
-          <GoogleSignin /> 
-        </CardContent>
+        <CardContent className="space-y-3"> <GoogleSignin /> </CardContent>
       </Card>
     </div>
   );

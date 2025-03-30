@@ -6,7 +6,7 @@ import CredentialsProvider from 'next-auth/providers/credentials';   //email/pas
 import GoogleProvider from 'next-auth/providers/google';             //Google provider to authenticate users.
 import { prisma } from '@/db/prisma';
 import { PrismaAdapter } from '@auth/prisma-adapter';
-import { handleGoogleUser } from './lib/actions/user.actions';       //server action to create  new user in the db when signing in with Google
+import { cookies } from 'next/headers';
 
 //TS fix for (role) in session, by default the NextAuth session user type only has a name, email and id. we extend it with extra properties (e.g. role)
 declare module 'next-auth' {
@@ -38,7 +38,7 @@ export const config = {
         return null;
       },
     }),
-    //Google provider to authenticate users (sign in with Google)
+    //Google provider to authenticate users (1st we need to create a new project in `Google Developer Console` to get the client id and secret)
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID!,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
@@ -65,18 +65,21 @@ export const config = {
           token.name = user.email!.split('@')[0];          
           await prisma.user.update({ where: { id: user.id }, data: { name: token.name } });
         }
-      }   
-      // if the session user updated his name, Update the token data with the new name (without re-logging)
-      if (session?.user.name && trigger === 'update') { token.name = session.user.name; }
+        // if the session user updated his name, Update the token data with the new name (without re-logging)
+        if (session?.user.name && trigger === 'update') { token.name = session.user.name; }
+
+        // ** Manually Handling persisting a guest cart to the user when he signs in**                             
+        const sessionCartId = (await cookies()).get("sessionCartId")?.value;     // Get sessionCartId cookie for the guest cart (Next.js cookies)
+        if (sessionCartId) {      
+          const sessionCart = await prisma.cart.findFirst({ where: { sessionCartId } });  //Find guest cart by the sessionCartId in the DB
+          if (sessionCart) {
+            await prisma.cart.deleteMany({ where: { userId: user.id } });      // Clear any existing user old cart
+            await prisma.cart.update({ where: { id: sessionCart.id }, data: { userId: user.id } });  // Assign guest cart to the user
+          }
+        }
+      } 
       return token;
-    },   
-    //signIn callback, if user is signing with google, we use handleGoogleUser() server action to create a new user in the db
-    async signIn({ user, account }) {
-      if (account?.provider === "google") {
-        await handleGoogleUser({ name: user.name!, email: user.email!, image: user.image! });          
-      }
-      return true;
-    }
+    },  
   },
 } satisfies NextAuthConfig;
 

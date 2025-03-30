@@ -6,52 +6,19 @@ import { revalidatePath } from 'next/cache';         //used to revalidate the ca
 //import zod Schemas/types from validator.ts
 import { paymentMethodSchema, paymentMethodType, shippingAddressSchema, shippingAddressType, signInType, signUpType, updateUserType} from '../validator';     
 import { hashSync } from 'bcrypt-ts-edge';           //hashing function from bcrypt-ts library
-import { prisma } from '@/db/prisma';                //import the Prisma client from prisma.ts, the file we created
-import { cookies } from 'next/headers';              //Nextjs cookies, we can set it in server-actions & get it in components
-import { Prisma } from '@prisma/client';
-
+import { prisma } from '@/db/prisma';                //import the Prisma object from prisma.ts, the file we created
+import { Prisma } from '@prisma/client';             //import the Prisma client
 
 
 // Sign in the user with email/password server-action
 export async function signInWithCredentials(prevState: unknown, data: signInType) {
   try {      
-    await signIn("credentials", data);               //pass received user credentials to Next_Auth signIn() function 
-       
-    // Handle persisting the guest cart when user signs in
-    const cookiesObject = await cookies();                              //Get Nextjs cookies
-    const sessionCartId = cookiesObject.get('sessionCartId')?.value;    //Get sessionCartId cookie for the guest cart
-    if (sessionCartId) {      
-      const sessionCart = await prisma.cart.findFirst({ where: { sessionCartId } });  //Find the guest cart by the sessionCartId in the DB
-      if (sessionCart) {
-        const user = await prisma.user.findFirst({ where: { email: data.email }});    //get the user by email        
-        await prisma.cart.deleteMany({ where: { userId: user?.id } });        //clear & Delete any existing user cart        
-        await prisma.cart.update({ where: { id: sessionCart.id }, data: { userId: user?.id } });  //Assign the guest cart to the logged-in user
-      }
-    }   
+    await signIn("credentials", data);          //pass received user credentials to Next_Auth signIn() function     
     return { success: true, message: "Signed in successfully" };   //return success message, will be used in useActionState()
   } catch (error) {
+    console.error("Error signing in:", error);          //log the error
     if (isRedirectError(error)) { throw error; }
     return { success: false, message: "Invalid email or password" };   //return error message, will be used in useActionState()
-  }
-}
-
-
-
-// handle Google User Sign-in server-action
-export async function handleGoogleUser(user: { name: string; email: string; image: string }) {
-  try {
-    // Check if the user already exists
-    const existingUser = await prisma.user.findUnique({ where: { email: user.email } });
-
-    if (!existingUser) {
-      // ✅ Create a new user if they don’t exist
-      return await prisma.user.create({ data: { name: user.name, email: user.email, image: user.image } });
-    }
-
-    return existingUser;            // Return existing user to maintain session consistency
-  } catch (error) {
-    console.error("Error handling Google user:", error);
-    throw new Error("Failed to process Google sign-in.");
   }
 }
 
@@ -78,17 +45,6 @@ export async function signUp(prevState: unknown, data: signUpType) {
     await prisma.user.create({ data: { name: data.name, email: data.email, password: data.password } });
     await signIn('credentials', { email: data.email, password: plainPassword });    //pass user credentials to Next_Auth signIn() function 
     
-    // Handle persisting the guest cart when user signs in
-    const cookiesObject = await cookies();                              //Get Nextjs cookies
-    const sessionCartId = cookiesObject.get('sessionCartId')?.value;    //Get sessionCartId cookie for the guest cart
-    if (sessionCartId) {      
-      const sessionCart = await prisma.cart.findFirst({ where: { sessionCartId } });  //Find the guest cart by the sessionCartId in the DB
-      if (sessionCart) {
-        const user = await prisma.user.findFirst({ where: { email: data.email }});    //get the user by email        
-        await prisma.cart.deleteMany({ where: { userId: user?.id } });        //clear & Delete any existing user cart        
-        await prisma.cart.update({ where: { id: sessionCart.id }, data: { userId: user?.id } });  //Assign the guest cart to the logged-in user
-      }
-    }
     return { success: true, message: 'User created successfully' };                 //return success message, will be used in useActionState()
   } catch (error) {
     if (isRedirectError(error)) { throw error; }  

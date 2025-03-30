@@ -7,7 +7,7 @@ import { useEffect } from 'react';
 //when the user sign-up/sign-in his guest cart will be assigned to him (inside signin/signup server-actions)
 export default function GuestCartId () {
 
-  useEffect(() => {  guestCartId() }, [])        // Call the guestCartId server-action when the component mounts
+  useEffect(() => { guestCartId() }, [])        // Call the guestCartId server-action when the component mounts
     
   return null            // This component doesn't render anything
 }
