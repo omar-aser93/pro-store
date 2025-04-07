@@ -1,5 +1,5 @@
 // This is the Prisma schema file, created by (npx prisma init) .. unlike mongoDB, PosgreSQL needs hosting, here we using vercel/postgres based on Neon 
-//for SQL DBs, we use migrate to create the tables, 1st (npx prisma migrate dev --name init) to create the migration file, then (npx prisma generate) after every change in this file, we check changes using (npx prisma studio)
+//for SQL DBs, we use migrate to create the tables, 1st (npx prisma migrate dev --name init) to create the migration file *change init to any name*, then (npx prisma generate) after every change in this file, we check changes using (npx prisma studio)
 //User-Related Models: User, Account, Session, VerificationToken .. are based on the NextAuth.js schema (https://authjs.dev/getting-started/adapters/prisma)
 
 generator client {
@@ -50,6 +50,8 @@ model User {
   image         String?
   address       Json?     @db.Json                    //`@db.Json` - maps the field to a JSON object type in the db {street: '...', city: '...', postalCode: '...'}
   paymentMethod String?
+  otp           String?  
+  otpExpires    DateTime? @db.Timestamp(6)
   createdAt     DateTime  @default(now()) @db.Timestamp(6)
   updatedAt     DateTime  @updatedAt
   account       Account[]               //relation with Account model             

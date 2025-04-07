@@ -42,12 +42,14 @@ const CredentialsSignInForm = () => {
           {errors.email && <div className='text-center text-destructive mt-2'>{errors.email.message}</div>}
         </div>       
         {/* Password input, with eye icon to show/hide password */}
-        <div className='relative'>         
+        <div>         
           <Label htmlFor='password'>Password</Label>
-          <Input {...register('password')} id='password' type={showPassword ? 'text' : 'password'} name='password' defaultValue='' autoComplete='current-password' />
-          <Button type="button" variant="ghost" size="icon" onClick={() => setShowPassword((prev) => !prev)}  className="absolute right-0 top-2/3  -translate-y-1/2" >
-            {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-          </Button>
+          <div className="relative">
+          <Input {...register('password')} id='password' type={showPassword ? 'text' : 'password'} defaultValue='' autoComplete='current-password' className='pr-10' />
+          <button type="button" onClick={() => setShowPassword((prev) => !prev)} className="absolute inset-y-0 right-2 flex items-center justify-center text-muted-foreground" tabIndex={-1} >
+              {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+            </button>
+          </div>
           {errors.password && <div className='text-center text-destructive mt-2'>{errors.password.message}</div>}
         </div>        
         {/* Hidden input for callbackUrl, to persist the callback when we submit the form (used to redirect to previous page) */}
@@ -62,6 +64,11 @@ const CredentialsSignInForm = () => {
 
         {/*get actionState - if error, then show error message*/}    
         {data && !data.success && ( <div className='text-center text-destructive'>{data.message}</div> )}
+
+        {/*Link to forgot password pages */}
+        <div className='text-sm text-center text-muted-foreground'>
+          <Link target='_self' className='link' href={`/forgot-password?callbackUrl=${callbackUrl}`}> Forgot password? </Link>
+        </div>
         
         {/*Link to sign up page*/}
         <div className='text-sm text-center text-muted-foreground'>

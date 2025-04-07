@@ -59,6 +59,33 @@ export const signUpFormSchema = z.object({
 export type signUpType = z.infer<typeof signUpFormSchema> & { callbackUrl: string };
 
 
+// Zod Schema for forgot-Password email input
+export const forgotPasswordSchema = z.object({
+  email: z.string().email('Invalid email address').min(3, 'Email must be at least 3 characters'),
+});
+//We use `z.infer` to create a forgotPassword TS type
+export type forgotPasswordType = z.infer<typeof forgotPasswordSchema>;
+
+
+// Zod Schema for validating OTP input (6 digits)
+export const otpSchema = z.object({
+  otp: z.string().length(6, "OTP must be exactly 6 digits").regex(/^\d{6}$/, "OTP must contain only digits"),
+});
+//We use `z.infer` to create a otp TS type & include all fields of the Schema + email (passed as a query param to the verify-otp page)
+export type otpType = z.infer<typeof otpSchema> & { email: string };  
+
+
+// Zod Schema for validating Reset Password 
+export const resetPasswordSchema = z.object({
+  newPassword: z.string().min(6, "Password must be at least 6 characters long").max(64, "Password is too long"),
+  confirmPassword: z.string() })
+  //.refine() to add a custom validation for passwords matching 
+  .refine((data) => data.newPassword === data.confirmPassword, { path: ["confirmPassword"], message: "Passwords do not match" 
+});
+//We use `z.infer` to create a resetPassword TS type & include all fields of the Schema + email (passed as a query param to the page)
+export type resetPasswordType = z.infer<typeof resetPasswordSchema> & { email: string };  
+
+
 // Zod Schema for validating Update Profile 
 export const updateProfileSchema = z.object({
   name: z.string().min(3, 'Name must be at least 3 characters'),

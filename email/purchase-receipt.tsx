@@ -5,7 +5,7 @@ import { Order } from '@/lib/validator';
 import 'dotenv/config';     //using env vars outside of the main app folder, we need to import the `dotenv/config` module.
   
 
-// PurchaseReceiptEmail component, used as the email template, receives the order data as a prop
+// PurchaseReceiptEmail component, used as an email template, receives the order data as a prop
 export default function PurchaseReceiptEmail({ order }: {order: Order}) { 
   const dateFormatter = new Intl.DateTimeFormat("en", { dateStyle: "medium" });  // `dateFormatter` object to format the order date
   return (

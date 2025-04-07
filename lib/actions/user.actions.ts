@@ -2,21 +2,21 @@
 
 import { isRedirectError } from 'next/dist/client/components/redirect-error';   //`isRedirectError` function used to check if error is a redirect error
 import { auth, signIn, signOut } from '@/auth';      //import the signIn and signOut functions from auth.ts
+import { sendOTPEmail } from "@/email";              //import (resend lib) sendOTPEmail Function we created
 import { revalidatePath } from 'next/cache';         //used to revalidate the cache of a specific path (we use it with POST/PUT/DELETE actions)
 //import zod Schemas/types from validator.ts
-import { paymentMethodSchema, paymentMethodType, shippingAddressSchema, shippingAddressType, signInType, signUpType, updateUserType} from '../validator';     
+import { forgotPasswordType, otpType, paymentMethodSchema, paymentMethodType, resetPasswordType, shippingAddressSchema, shippingAddressType, signInType, signUpType, updateUserType} from '../validator';     
 import { hashSync } from 'bcrypt-ts-edge';           //hashing function from bcrypt-ts library
 import { prisma } from '@/db/prisma';                //import the Prisma object from prisma.ts, the file we created
 import { Prisma } from '@prisma/client';             //import the Prisma client
 
 
-// Sign in the user with email/password server-action
+// Sign in the user with email/password server-action, receives the form data .. prevState is used with useActionState() in the form component
 export async function signInWithCredentials(prevState: unknown, data: signInType) {
   try {      
     await signIn("credentials", data);          //pass received user credentials to Next_Auth signIn() function     
     return { success: true, message: "Signed in successfully" };   //return success message, will be used in useActionState()
   } catch (error) {
-    console.error("Error signing in:", error);          //log the error
     if (isRedirectError(error)) { throw error; }
     return { success: false, message: "Invalid email or password" };   //return error message, will be used in useActionState()
   }
@@ -31,7 +31,7 @@ export async function signOutUser() {
 
 
 
-// Register a new user server-action
+// Register a new user server-action, receives the form data .. prevState is used with useActionState() in the form component
 export async function signUp(prevState: unknown, data: signUpType) {
   try { 
     //check if the user already exists in the db, then return error message that will be used in useActionState()
@@ -49,6 +49,68 @@ export async function signUp(prevState: unknown, data: signUpType) {
   } catch (error) {
     if (isRedirectError(error)) { throw error; }  
     return { success: false, message: 'Registration failed, Try again later' };     //return error message, will be used in useActionState()
+  }
+}
+
+
+
+//send otp for forgot password server-action, receives the form data .. prevState is used with useActionState() in the form component
+export async function sendForgotPasswordOTP(prevState: unknown, data: forgotPasswordType) {
+  try{
+    //check if the user exists in the db, if not return error message 
+    const user = await prisma.user.findUnique({ where: { email: data.email } });
+    if (!user) { return { success: false, message: 'User doesn\'t exist' }; }
+
+    //generate a random OTP and set it to expire in 10 minutes
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const otpExpires = new Date(Date.now() + 10 * 60 * 1000);
+
+    //update the user's OTP and expiration date in the db using Prisma & passing the generated OTP and expiration date
+    await prisma.user.update({ where: { email: data.email }, data: { otp, otpExpires } });
+    await sendOTPEmail(data.email, otp);         //send OTP email using the (resend lib) sendOTPEmail function we created
+    
+    return { success: true, message: 'OTP sent successfully' };        //return success message, will be used in useActionState()
+  } catch (error) {
+    if (isRedirectError(error)) { throw error; }  
+    return { success: false, message: 'Failed to send OTP, Try again later' };    //return error message, will be used in useActionState()
+  }
+}
+
+
+
+// Verify OTP server-action, receives the form data .. prevState is used with useActionState() in the form component
+export async function verifyOTP(prevState: unknown, data: otpType) {
+  try{
+    //check if the user exists in the db and if the recieved OTP is the same as the one in the db, if not return error message
+    const user = await prisma.user.findUnique({ where: { email: data.email } });
+    if (!user || user.otp !== data.otp) { return { success: false, message: "Invalid OTP" }; }
+    //check if the OTP is expired, if yes return error message
+    if (user.otpExpires && new Date() > user.otpExpires) { return { success: false, message: "OTP expired" }; }
+    
+    return { success: true, message: 'OTP verified successfully' };        //return success message, will be used in useActionState()
+  } catch (error) {
+    if (isRedirectError(error)) { throw error; }
+    return { success: false, message: 'Failed to verify OTP, Try again later' };   //return error message, will be used in useActionState()
+  }
+}
+
+
+
+// Reset password server-action, receives the form data .. prevState is used with useActionState() in the form component
+export async function resetPassword(prevState: unknown, data: resetPasswordType) {
+  try {
+    //check if the user exists in the db, if not return error message
+    const user = await prisma.user.findUnique({ where: { email: data.email } });
+    if (!user) { return { success: false, message: 'User doesn\'t exist' }; }
+
+    const hashedPassword = hashSync(data.newPassword, 10);     //hash the new password to secure it before saving it in the DB
+    //update the user's password in the db using Prisma & passing the hashed password & resetting the OTP 
+    await prisma.user.update({ where: { email: data.email }, data: { password: hashedPassword, otp: null, otpExpires: null } });
+ 
+    return { success: true, message: 'Password reset successfully' };        //return success message, will be used in useActionState()
+  } catch (error) {
+    if (isRedirectError(error)) { throw error; }    
+    return { success: false, message: 'Failed to reset password, Try again later' };   //return error message, will be used in useActionState()
   }
 }
 

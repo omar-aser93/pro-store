@@ -21,8 +21,8 @@ const calculateTimeRemaining = (targetDate: Date) => {
 
 // DealCountdown is a component that will display a deal countdown timer
 const DealCountdown = () => {
-  const [time, setTime] = useState<ReturnType<typeof calculateTimeRemaining>>();      // State to store the time remaining
-
+  
+  const [time, setTime] = useState<ReturnType<typeof calculateTimeRemaining> | null>(null);   // State to store the time remaining
   useEffect(() => {    
     setTime(calculateTimeRemaining(TARGET_DATE));      // Calculate initial time remaining when the component mounts
     // Set up an interval to update the time remaining every second

@@ -25,20 +25,21 @@ export default async function middleware(req: NextRequest) {
 
 
   // Define public paths that authenticated users should not access (e.g., sign-in, sign-up)
-  const publicPaths = [/^\/sign-in/, /^\/sign-up/];
+  const publicPaths = [/^\/sign-in/, /^\/sign-up/, /^\/forgot-password/, /^\/reset-password/, /^\/verify-otp/];
   // If user is authenticated and tries to access public paths (e.g., sign-in, sign-up), redirect to home or callbackUrl
-  if (token && publicPaths.some((pattern) => pattern.test(req.nextUrl.pathname))) {
-    const callbackUrl = req.nextUrl.searchParams.get("callbackUrl") || "/";
-    return NextResponse.redirect(new URL(callbackUrl, req.url));
+  if (token && publicPaths.some((pattern) => pattern.test(req.nextUrl.pathname)) ) {
+    // If there is a callbackUrl, redirect to that URL, otherwise redirect to home
+    return req.nextUrl.searchParams.has("callbackUrl") 
+        ? NextResponse.redirect(new URL(req.nextUrl.searchParams.get("callbackUrl")!, req.url)) 
+        : NextResponse.redirect(new URL("/", req.url));
   }
-
   return NextResponse.next();           // middleware proceeds when no redirect is triggered
 }
 
 
 // Matcher to Apply middleware only to specific routes
 export const config = {
-  matcher: ["/shipping-address", "/payment-method", "/place-order", "/profile", "/user/:path*", "/order/:path*", "/admin/:path*", "/sign-in", "/sign-up" ],
+  matcher: ["/shipping-address", "/payment-method", "/place-order", "/profile", "/user/:path*", "/order/:path*", "/admin/:path*", "/sign-in", "/sign-up", "/forgot-password", "/verify-otp", "/reset-password" ],
 };
 
 

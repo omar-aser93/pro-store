@@ -74,7 +74,7 @@ export const config = {
           const sessionCart = await prisma.cart.findFirst({ where: { sessionCartId } });  //Find guest cart by the sessionCartId in the DB
           if (sessionCart) {
             await prisma.cart.deleteMany({ where: { userId: user.id } });      // Clear any existing user old cart
-            await prisma.cart.update({ where: { id: sessionCart.id }, data: { userId: user.id } });  // Assign guest cart to the user
+            await prisma.cart.update({ where: { id: sessionCart?.id }, data: { userId: user?.id } });  // Assign guest cart to the user
           }
         }
       } 
