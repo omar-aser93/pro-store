@@ -70,7 +70,7 @@ export async function getReviews({ productId }: { productId: string }) {
 
 
 
-// Get the review written by the current user for this product (server-action)
+// Get the review written by current user for this product (server-action)... to set deafault values in update form
 export const getReviewByProductId = async ({ productId }: { productId: string; }) => {
   // Check if user is authenticated, if not throw an error
   const session = await auth();
@@ -78,6 +78,41 @@ export const getReviewByProductId = async ({ productId }: { productId: string; }
   //res with the review written by the current user for this product
   return await prisma.review.findFirst({ where: { productId, userId: session?.user.id } });
 };
+
+
+
+// Delete a review server-action (by it's ID)
+export async function deleteReview(id: string) {
+  try {    
+    // Check if user is authenticated, if not throw an error
+    const session = await auth();
+    if (!session) throw new Error("User is not authenticated");
+
+    // get the review by it's ID, if not found, throw an error
+    const review = await prisma.review.findUnique({ where: { id } });
+    if (!review) throw new Error("Review not found");
+
+    // Ensure the current user is the owner of the review
+    if (review.userId !== session.user.id) { throw new Error("Unauthorized action") }
+
+    // Create a prisma transaction to Delete the review & update product stats
+    //(transaction) is a way to ensure all operations are completed successfully or none of them are completed & DB is left the same as before the transaction started
+    await prisma.$transaction(async (tx) => { await tx.review.delete({ where: { id } });   //1st: delete the review
+
+      // 2nd & 3rd : Recalculate average rating and number of reviews
+      const averageRating = await tx.review.aggregate({ _avg: { rating: true }, where: { productId: review.productId } });
+      const numReviews = await tx.review.count({ where: { productId: review.productId } });
+
+      // Update (rating & number of reviews) for the product
+      await tx.product.update({ where: { id: review.productId }, data: { rating: averageRating._avg.rating || 0, numReviews }});
+    });
+
+    revalidatePath(`/product/${review.productId}`);            //Revalidate the product page to get fresh data
+    return { success: true, message: "Review deleted successfully" };                //if success, return success message
+  } catch {
+    return { success: false, message: "Failed to delete review, try again later" };  //if error, return error message
+  }
+}
 
 
 

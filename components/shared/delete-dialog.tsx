@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useTransition } from 'react';
+import { Trash2 } from 'lucide-react';                //icon library auto installed by shadcn
 //Shadcn components
 import { AlertDialog, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger} from '../ui/alert-dialog';
 import { Button } from '../ui/button';
@@ -31,8 +32,8 @@ export default function DeleteDialog({ id, action }: { id: string; action: (id: 
     //shadcn Alert Dialog, takes open_state & setOpen as props
     <AlertDialog open={open} onOpenChange={setOpen}>
       {/* Delete button that opens the Dialog - asChild is used with shadcn components that have button/Link child as trigger */}  
-      <AlertDialogTrigger asChild>
-        <Button size='sm' variant='outline'> Delete </Button>
+      <AlertDialogTrigger asChild>        
+        <Button size='sm' variant='outline'><Trash2 className="text-red-500 hover:scale-110 transition-all cursor-pointer ml-2" /> Delete </Button>
       </AlertDialogTrigger>
 
       <AlertDialogContent>

@@ -1,6 +1,7 @@
 import { Metadata } from 'next';
 import { getAllUsers, deleteUser } from '@/lib/actions/user.actions';
 import Link from 'next/link';
+import { SquarePen } from 'lucide-react';         //icons library auto installed by shadcn
 import Pagination from '@/components/shared/pagination';
 import DeleteDialog from '@/components/shared/delete-dialog';
 import { formatId } from '@/lib/utils';
@@ -52,9 +53,10 @@ const UsersPage = async (props: {searchParams: Promise<{ query: string; page: st
                 <TableCell>{user.name}</TableCell>
                 <TableCell>{user.email}</TableCell>
                 <TableCell>{user.role}</TableCell>
-                <TableCell className='flex gap-1'>
+                <TableCell className='flex gap-1 '>
+                  {/* Edit user Link */}
                   <Button variant='outline' size='sm'>
-                    <Link href={`/admin/users/${user.id}`}>Edit</Link>       {/* Edit user Link */}
+                    <Link href={`/admin/users/${user.id}`} className='flex items-center justify-between gap-2 mx-2'><SquarePen /> Edit </Link>        
                   </Button>
                   <DeleteDialog id={user.id} action={deleteUser} />          {/* Delete modal component */}
                 </TableCell>

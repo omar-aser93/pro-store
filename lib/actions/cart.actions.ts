@@ -36,6 +36,33 @@ export async function guestCartId() {
 
 
 
+// Get user's cart server-action, will also be used in other server-actions
+export async function getMyCart() {
+  // Check for stored guest cart Id cookie, if not found, throw an error .. we created this cookie in guestCartId() server-action
+  const sessionCartId = (await cookies()).get("sessionCartId")?.value;
+  if (!sessionCartId) throw new Error("Cart Session not found");
+
+  // Get current user's session to get his ID
+  const session = await auth();
+  const userId = session?.user?.id ? (session.user.id as string) : undefined;
+
+  // Get user cart from database, if user logged in, use userId, if not, use sessionCartId stored cookie
+  const cart = await prisma.cart.findFirst({ where: userId ? { userId: userId } : { sessionCartId: sessionCartId } });
+  if (!cart) return undefined;
+
+  // Return & Convert values for compatibility with AddToCart component
+  return convertToPlainObject({
+    ...cart,
+    items: cart.items as cartItemType[],
+    itemsPrice: cart.itemsPrice.toString(),
+    totalPrice: cart.totalPrice.toString(),
+    shippingPrice: cart.shippingPrice.toString(),
+    taxPrice: cart.taxPrice.toString(),
+  });
+}
+
+
+
 // Add item to cart server-action, receives a cart item as a parameter
 export async function addItemToCart(data: cartItemType) {
   try {
@@ -90,33 +117,6 @@ export async function addItemToCart(data: cartItemType) {
 
 
 
-// Get user's cart server-action
-export async function getMyCart() {
-  // Check for stored guest cart Id cookie, if not found, throw an error .. we created this cookie in guestCartId() server-action
-  const sessionCartId = (await cookies()).get("sessionCartId")?.value;
-  if (!sessionCartId) throw new Error("Cart Session not found");
-
-  // Get current user's session to get his ID
-  const session = await auth();
-  const userId = session?.user?.id ? (session.user.id as string) : undefined;
-
-  // Get user cart from database, if user logged in, use userId, if not, use sessionCartId stored cookie
-  const cart = await prisma.cart.findFirst({ where: userId ? { userId: userId } : { sessionCartId: sessionCartId } });
-  if (!cart) return undefined;
-
-  // Return & Convert values for compatibility with AddToCart component
-  return convertToPlainObject({
-    ...cart,
-    items: cart.items as cartItemType[],
-    itemsPrice: cart.itemsPrice.toString(),
-    totalPrice: cart.totalPrice.toString(),
-    shippingPrice: cart.shippingPrice.toString(),
-    taxPrice: cart.taxPrice.toString(),
-  });
-}
-
-
-
 //removeItemFromCart server-action, receives a product ID as a parameter
 export async function removeItemFromCart(productId: string) {
   try {
@@ -153,5 +153,31 @@ export async function removeItemFromCart(productId: string) {
     return { success: true, message: `${product.name} was removed from cart` };
   } catch (error:any) {    
     return { success: false, message: typeof error.message === 'string' ? error.message : JSON.stringify(error.message) };
+  }
+}
+
+
+
+// clearCart server-action
+export async function clearCart() {
+  try {
+    // Check for stored guest cart Id cookie, if not found, throw an error .. we created this cookie in guestCartId() server-action
+    const sessionCartId = (await cookies()).get("sessionCartId")?.value;
+    if (!sessionCartId) throw new Error("Cart Session not found");
+
+    // Get user's cart using getMyCart() server-action , if not found, throw an error
+    const cart = await getMyCart();
+    if (!cart) throw new Error("Cart not found");
+
+    // Update cart in database, set items to empty array and prices to 0.00
+    await prisma.cart.update({
+      where: { id: cart.id },
+      data: { items: [], itemsPrice: "0.00", shippingPrice: "0.00", taxPrice: "0.00", totalPrice: "0.00" },
+    });
+
+    revalidatePath("/cart");                                           // Revalidate cart page to get fresh data
+    return { success: true, message: "Cart cleared successfully" };    // if success, return success message
+  } catch (error: any) {
+    return { success: false, message: typeof error.message === "string" ? error.message : JSON.stringify(error.message) };
   }
 }

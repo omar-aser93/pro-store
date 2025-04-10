@@ -6,6 +6,7 @@ import CheckoutSteps from '@/components/shared/checkout-steps';
 import PlaceOrderForm from './place-order-form';
 import { getMyCart } from '@/lib/actions/cart.actions';
 import { getUserById } from '@/lib/actions/user.actions';
+import { SquarePen } from 'lucide-react';                            //icons library auto installed by shadcn
 import { formatCurrency } from '@/lib/utils';                        //utility function to format currency
 import { shippingAddressType } from '@/lib/validator';               //zod schema type for shipping address
 //shadcn components
@@ -55,7 +56,7 @@ const placeOrderPage = async () => {
                 {userAddress.postalCode}, {userAddress.country}{' '}
               </p>
               <div className='mt-3'>
-                <Link href='/shipping-address'><Button variant='outline'>Edit</Button></Link>  {/* link to shipping address page */}
+                <Link href='/shipping-address'><Button variant='outline'><SquarePen /> Edit</Button></Link>  {/* link to shipping address page */}
               </div>
             </CardContent>
           </Card>
@@ -66,7 +67,7 @@ const placeOrderPage = async () => {
               <h2 className='text-xl pb-4'>Payment Method</h2>
               <p>{user.paymentMethod}</p>
               <div className='mt-3'>
-                <Link href='/payment-method'><Button variant='outline'>Edit</Button></Link>  {/* link to payment method page */}
+                <Link href='/payment-method'><Button variant='outline'><SquarePen /> Edit</Button></Link>  {/* link to payment method page */}
               </div>
             </CardContent>
           </Card>
@@ -99,7 +100,7 @@ const placeOrderPage = async () => {
                   ))}
                 </TableBody>
               </Table>
-              <Link href='/cart'><Button variant='outline'>Edit</Button></Link>     {/* link to cart page */}
+              <Link href='/cart'><Button variant='outline'><SquarePen /> Edit</Button></Link>     {/* link to cart page */}
             </CardContent>
           </Card>
         </div>

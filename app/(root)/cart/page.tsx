@@ -4,7 +4,7 @@ import { getMyCart } from '@/lib/actions/cart.actions';
 //set page title to "Shopping Cart"
 export const metadata = {
     title: 'Shopping Cart',
-  };
+};
   
   
 const CartPage = async () => {

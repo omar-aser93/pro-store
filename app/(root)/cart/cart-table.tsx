@@ -2,8 +2,8 @@
 import { useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
-import { addItemToCart, removeItemFromCart } from '@/lib/actions/cart.actions';
-import { ArrowRight, Loader, Minus, Plus } from 'lucide-react';         //icons lib auto installed with shadcn  
+import { addItemToCart, clearCart, removeItemFromCart } from '@/lib/actions/cart.actions';
+import { ArrowRight, Loader, Minus, Plus, Trash2 } from 'lucide-react';         //icons lib auto installed with shadcn  
 import Image from 'next/image';
 import Link from 'next/link';
 import { Cart } from '@/lib/validator';                        //zod schema type for Cart
@@ -84,8 +84,19 @@ const CartTable = ({ cart }: { cart?: Cart }) => {
                 Subtotal ({cart.items.reduce((a, c) => a + c.qty, 0)}):
                 <span className='font-bold'> {formatCurrency(cart.itemsPrice)} </span>
               </div>
+              {/* Button to redirect to other checkout steps pages */}
               <Button className='w-full' disabled={isPending} onClick={() => startTransition(() => router.push('/shipping-address'))}>
-                {isPending ? (<Loader className='w-4 h-4 animate-spin' />) : (<ArrowRight className='w-4 h-4' /> )}{' '} Proceed to Checkout
+                {isPending ? (<Loader className='w-4 h-4 animate-spin' />) : (<ArrowRight className='w-4 h-4' /> )} Proceed to Checkout
+              </Button>
+              {/* Button to clear cart, if clicked, call clearCart() server-action, if success, display success toast, if error, display error toast */}
+              <Button className="w-full mt-4" variant="destructive" disabled={isPending} 
+                  onClick={() => startTransition(async () => {
+                       const res = await clearCart();
+                       if (!res.success) { toast({ variant: "destructive", description: res.message }) }
+                       else { toast({ description: res.message }) }
+                      })
+                }>
+                <Trash2/> {isPending ? <><Loader className="w-4 h-4 animate-spin" /> Clearing...</> : ( "Clear Cart" )}
               </Button>
             </CardContent>
           </Card>

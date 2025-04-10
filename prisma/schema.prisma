@@ -34,6 +34,7 @@ model Product {
   createdAt   DateTime @default(now()) @db.Timestamp(6)     //6 digits of Milliseconds - more precision than the default 3 digits
   OrderItem       OrderItem[]                               //relation with OrderItem model
   Review          Review[]                                  //relation with Review model
+  wishlist        Wishlist[]                                //relation with Wishlist
 }
 
 
@@ -59,6 +60,7 @@ model User {
   Cart          Cart[]                  //relation with Cart model
   Order         Order[]                 //relation with Order model
   Review        Review[]                //relation with Review model
+  wishlist      Wishlist[]              //relation with Wishlist
 }
 
 
@@ -84,7 +86,7 @@ model Account {
 }
 
 
-//User's Session model
+//User's Session model (nextAuth.js docs)
 model Session {
   sessionToken String   @id                      //`@id` - Marks field as a primary key of the table in the db
   userId       String   @db.Uuid                 // a foreign key 
@@ -96,7 +98,7 @@ model Session {
 }
 
 
-//VerificationToken model
+//VerificationToken model (nextAuth.js docs)
 model VerificationToken {
   identifier String
   token      String
@@ -179,4 +181,20 @@ model Review {
   product            Product  @relation(fields: [productId], references: [id], onDelete: Cascade )
   //relation to User model: Review model (userId) field will reference to User model (id) field , onDelete: Cascade - if a user is deleted, all the reviews associated with that user will also be deleted
   user               User     @relation(fields: [userId], references: [id], onDelete: Cascade )
+}
+
+
+//Wishlist model 
+model Wishlist {
+  //`@id` - Marks field as a primary key of the table in the db, `@default(dbgenerated("gen_random_uuid()"))` - generates a random uuid for the id field
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId    String   @db.Uuid                                  // a foreign key
+  productId String   @db.Uuid                                  // a foreign key
+  createdAt DateTime @default(now()) @db.Timestamp(6)
+  //relation to User model: Wishlist model (userId) field will reference to User model (id) field , onDelete: Cascade - if a user is deleted, all the wishlists associated with that user will also be deleted
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  //relation to Product model: Wishlist model (productId) field will reference to Product model (id) field , onDelete: Cascade - if a product is deleted, all the wishlists associated with that product will also be deleted
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  // @@unique preventing duplicates for the same product in the wishlist. This composite unique constraint ensures that a user can only have one wishlist entry for each product.
+  @@unique([userId, productId]) 
 }

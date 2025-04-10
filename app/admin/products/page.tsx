@@ -2,6 +2,7 @@ import Link from 'next/link';
 import Pagination from '@/components/shared/pagination';
 import DeleteDialog from '@/components/shared/delete-dialog';
 import { formatCurrency, formatId } from '@/lib/utils';
+import { SquarePen } from 'lucide-react';         //icons library auto installed by shadcn
 import { getAllProducts, deleteProduct } from '@/lib/actions/product.actions';
 import { Metadata } from 'next';
 //shadcn components
@@ -66,8 +67,9 @@ const ProductsPage = async (props: {searchParams: Promise<{ query: string; page:
                 <TableCell>{product.stock}</TableCell>
                 <TableCell>{product.rating}</TableCell>
                 <TableCell className='flex gap-1'>
-                  <Button variant='outline' size='sm'>
-                    <Link href={`/admin/products/${product.id}`}>Edit</Link>      {/* Edit Product Link */}
+                  {/* Edit Product Link */}
+                  <Button variant='outline' size='sm' >
+                    <Link href={`/admin/products/${product.id}`} className='flex items-center justify-between gap-2 mx-2'><SquarePen /> Edit </Link>      
                   </Button>
                   <DeleteDialog id={product.id} action={deleteProduct} />         {/* Delete modal component */}
                 </TableCell>

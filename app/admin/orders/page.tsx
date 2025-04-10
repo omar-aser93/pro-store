@@ -54,7 +54,7 @@ const OrdersPage = async (props: { searchParams: Promise<{ query: string; page: 
                 <TableCell>{formatCurrency(order.totalPrice)}</TableCell>
                 <TableCell>{order.isPaid && order.paidAt ? formatDateTime(order.paidAt).dateTime : <span className='text-red-500'>not paid</span>}</TableCell>
                 <TableCell>{order.isDelivered && order.deliveredAt ? formatDateTime(order.deliveredAt).dateTime : <span className='text-red-500'>not delivered</span>}</TableCell>
-                <TableCell>
+                <TableCell className='flex gap-1'>
                   <Button variant='outline' size='sm'>
                     <Link href={`/order/${order.id}`}>Details</Link>             {/* single order Link */}
                   </Button>

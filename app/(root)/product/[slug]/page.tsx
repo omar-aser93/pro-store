@@ -7,8 +7,10 @@ import ProductImages from '@/components/shared/product/product-images';
 import AddToCart from '@/components/shared/product/add-to-cart';
 import { getMyCart } from '@/lib/actions/cart.actions';
 import { getReviews } from '@/lib/actions/review.actions';
+import { getWishlist } from '@/lib/actions/wishlist.actions';
 import ReviewList from './review-list';
 import ReviewForm from './review-form';
+import ToggleWishButton from '@/components/shared/product/toggle-wish-button';
 import Rating from '@/components/shared/product/rating';
 //shadcn components
 import { Card, CardContent } from '@/components/ui/card';
@@ -29,6 +31,10 @@ const ProductDetailsPage = async (props: { params: Promise<{ slug: string }> }) 
   const cart = await getMyCart();                                 //get user's cart using getMyCart() server-action
   const reviews = await getReviews({ productId: product.id });    //get product reviews using getReviews() server-action
 
+  const wishList = await getWishlist();           // Fetch the current user's wishlist items server-action
+  // Check if the res is an array of wishlist items , if so, check if the current product is in the wishlist
+  const isFavorited = Array.isArray(wishList) ? wishList.some((item) => item.productId === product.id) : false;
+
   return (
     <>
       <section>
@@ -41,7 +47,12 @@ const ProductDetailsPage = async (props: { params: Promise<{ slug: string }> }) 
          <div className='col-span-2 p-5'>
             <div className='flex flex-col gap-6'>
               <p>{product.brand} {product.category}</p>
-              <h1 className='h3-bold'>{product.name}</h1>
+              {/* Name & wishlist button */}
+              <div className='flex items-center gap-3'>
+                <h1 className='h3-bold'>{product.name}</h1> 
+                <ToggleWishButton productId={product.id} isFavorited={isFavorited} /> 
+              </div>
+              {/* ProductRating component */}
               <div> <Rating value={Number(product.rating)} /> <p>{product.numReviews} reviews</p> </div>
               {/* ProductPrice component */}
               <div className='flex flex-col gap-3 sm:flex-row sm:items-center'>
@@ -86,7 +97,7 @@ const ProductDetailsPage = async (props: { params: Promise<{ slug: string }> }) 
           <div> Please{' '}<Link className='text-primary px-2' href={`/api/auth/signin?callbackUrl=/product/${product.slug}`} > sign in </Link>{' '} to write a review </div>
           )}  
           {/* ReviewList component, pass userId, productId & productSlug as props */}   
-          <ReviewList reviews={reviews.data}  />      
+          <ReviewList reviews={reviews.data} userId={userId!} />      
         </div>
       </section>      
     </>
