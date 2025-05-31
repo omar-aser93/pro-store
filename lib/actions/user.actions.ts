@@ -14,7 +14,7 @@ import { Prisma } from '@prisma/client';             //import the Prisma client
 // Sign in the user with email/password server-action, receives the form data .. prevState is used with useActionState() in the form component
 export async function signInWithCredentials(prevState: unknown, data: signInType) {
   try {      
-    await signIn("credentials", data);          //pass received user credentials to Next_Auth signIn() function     
+    await signIn("credentials",{ ...data, redirect: false });      //pass received user credentials to Next_Auth signIn() function     
     return { success: true, message: "Signed in successfully" };   //return success message, will be used in useActionState()
   } catch (error) {
     if (isRedirectError(error)) { throw error; }
@@ -43,7 +43,8 @@ export async function signUp(prevState: unknown, data: signUpType) {
     
     //create the user in the db using Prisma (with the data we recieved & hashed password)
     await prisma.user.create({ data: { name: data.name, email: data.email, password: data.password } });
-    await signIn('credentials', { email: data.email, password: plainPassword });    //pass user credentials to Next_Auth signIn() function 
+     //pass user credentials to Next_Auth signIn() function .. redirect: false to prevent Next_Auth from redirecting (it doesn't change the URL)
+    await signIn('credentials', { email: data.email, password: plainPassword, redirect: false });   
     
     return { success: true, message: 'User created successfully' };                 //return success message, will be used in useActionState()
   } catch (error) {
@@ -199,7 +200,8 @@ export async function getAllUsers({query, limit = Number(process.env.NEXT_PUBLIC
     skip: (page - 1) * limit,                            //paginate the data, skip (page number) * (items per page)
   });
 
-  const dataCount = await prisma.user.count();           //get the total number of users to calculate the total pages
+   //get the total number of users with the filters applied, to calculate total pages
+  const dataCount = await prisma.user.count({where: { ...queryFilter }});          
   return { data, totalPages: Math.ceil(dataCount / limit) };     //res with data and the total number of pages
 }
 

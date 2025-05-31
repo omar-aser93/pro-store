@@ -273,8 +273,8 @@ export async function getAllOrders({query, limit = Number(process.env.NEXT_PUBLI
     include: { user: { select: { name: true } } },         //include the user model data
   });
 
-  const dataCount = await prisma.order.count();     //get the total number of orders to calculate the total number of pages
-
+  //get the total number of orders with the filters applied, to calculate total pages
+  const dataCount = await prisma.order.count({where: { ...queryFilter }});   
   return { data, totalPages: Math.ceil(dataCount / limit) };       //res with data and the total number of pages
 }
 

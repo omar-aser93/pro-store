@@ -1,0 +1,10 @@
+{
+  "Home": {
+    "title": "Welcome to our app",
+    "description": "This is a sample application"
+  },
+  "Auth": {
+    "signIn": "Sign In",
+    "signUp": "Sign Up"
+  }
+}

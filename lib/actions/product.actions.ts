@@ -40,7 +40,7 @@ export async function getProductById(productId: string) {
 
 
 
-// Get all products server-action (Admin page), receives filters queries + limit & page values for pagination
+// Get all products server-action, receives filters queries + limit & page values for pagination
 export async function getAllProducts({query, limit = Number(process.env.NEXT_PUBLIC_PAGE_SIZE), page, category, price, rating, sort }
        :{query: string; limit?: number; page: number; category: string; price?: string; rating?: string; sort?: string;}) {
   
@@ -65,7 +65,8 @@ export async function getAllProducts({query, limit = Number(process.env.NEXT_PUB
     take: limit,                                    //take the limit (items per page)
   });
 
-  const dataCount = await prisma.product.count();         //get total number of products, to calculate total pages
+  //get total number of products with the filters applied, to calculate total pages
+  const dataCount = await prisma.product.count({where: { ...queryFilter, ...categoryFilter, ...priceFilter, ...ratingFilter }});        
   return { data, totalPages: Math.ceil(dataCount / limit), };     //res with data and the total number of pages
 }
 

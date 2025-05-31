@@ -1,9 +1,8 @@
 // This is the Prisma schema file, created by (npx prisma init) .. unlike mongoDB, PosgreSQL needs hosting, here we using vercel/postgres based on Neon 
 //for SQL DBs, we use migrate to create the tables, 1st (npx prisma migrate dev --name init) to create the migration file *change init to any name*, then (npx prisma generate) after every change in this file, we check changes using (npx prisma studio)
 //User-Related Models: User, Account, Session, VerificationToken .. are based on the NextAuth.js schema (https://authjs.dev/getting-started/adapters/prisma)
-
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
   previewFeatures = ["driverAdapters"]
 }
 
@@ -16,57 +15,60 @@ datasource db {
 //Product model
 model Product {
   //`@id` - Marks field as a primary key of the table in the db, `@default(dbgenerated("gen_random_uuid()"))` - generates a random uuid for the id field
-  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid    
+  id          String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   name        String
   //`@unique(map: "product_slug_idx")` - Adds a unique constraint on the field & assigns a custom name (product_slug_idx) to the db index created for this constraint. Without map, it would generate a default name.
-  slug        String   @unique(map: "product_slug_idx")
+  slug        String      @unique(map: "product_slug_idx")
   category    String
   images      String[]
   brand       String
   description String
   stock       Int
   //`@db.Decimal(12, 2)` maps the price field to a decimal type with precision 12 (total digits) and scale 2 (digits after the decimal point)
-  price       Decimal  @default(0) @db.Decimal(12, 2)
-  rating      Decimal  @default(0) @db.Decimal(3, 2)
-  numReviews  Int      @default(0)
-  isFeatured  Boolean  @default(false)     //`@default()` - Specifies a default value for a field when a new record is created & no value is explicitly provided.
+  price       Decimal     @default(0) @db.Decimal(12, 2)
+  rating      Decimal     @default(0) @db.Decimal(3, 2)
+  numReviews  Int         @default(0)
+  isFeatured  Boolean     @default(false)   //`@default()` - Specifies a default value for a field when a new record is created & no value is explicitly provided.
   banner      String?
-  createdAt   DateTime @default(now()) @db.Timestamp(6)     //6 digits of Milliseconds - more precision than the default 3 digits
-  OrderItem       OrderItem[]                               //relation with OrderItem model
-  Review          Review[]                                  //relation with Review model
-  wishlist        Wishlist[]                                //relation with Wishlist
+  createdAt   DateTime    @default(now()) @db.Timestamp(6)   //6 digits of Milliseconds - more precision than the default 3 digits
+  OrderItem   OrderItem[]         //relation with OrderItem model
+  Review      Review[]            //relation with Review model
+  wishlist    Wishlist[]          //relation with Wishlist
 }
 
 
 //User model
 model User {
   //`@id` - Marks field as a primary key of the table in the db, `@default(dbgenerated("gen_random_uuid()"))` - generates a random uuid for the id field
-  id            String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  name          String    @default("NO_NAME")
+  id                   String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name                 String       @default("NO_NAME")
   //`@unique(map: "user_email_idx")` - Adds a unique constraint on the field & assigns a custom name (user_email_idx) to the db index created for this constraint. Without map, it would generate a default name.
-  email         String    @unique(map: "user_email_idx")
-  password      String?                               //`?` - optional because we may login with Oauth, something like Google or Github & there will be no password.
-  role          String    @default("user")
-  emailVerified DateTime? @db.Timestamp(6)            //6 digits of Milliseconds - more precision than the default 3 digits
-  image         String?
-  address       Json?     @db.Json                    //`@db.Json` - maps the field to a JSON object type in the db {street: '...', city: '...', postalCode: '...'}
-  paymentMethod String?
-  otp           String?  
-  otpExpires    DateTime? @db.Timestamp(6)
-  createdAt     DateTime  @default(now()) @db.Timestamp(6)
-  updatedAt     DateTime  @updatedAt
-  account       Account[]               //relation with Account model             
-  session       Session[]               //relation with Session model
-  Cart          Cart[]                  //relation with Cart model
-  Order         Order[]                 //relation with Order model
-  Review        Review[]                //relation with Review model
-  wishlist      Wishlist[]              //relation with Wishlist
+  email                String       @unique(map: "user_email_idx")
+  password             String? //`?` - optional because we may login with Oauth, something like Google or Github & there will be no password.
+  role                 String       @default("user")
+  emailVerified        DateTime?    @db.Timestamp(6)   //6 digits of Milliseconds - more precision than the default 3 digits
+  image                String?
+  address              Json?        @db.Json   //`@db.Json` - maps the field to a JSON object type in the db {street: '...', city: '...', postalCode: '...'}
+  paymentMethod        String?
+  otp                  String?
+  otpExpires           DateTime?    @db.Timestamp(6)
+  newsletterSubscribed Boolean      @default(false)
+  newsletterToken      String?      @unique
+  createdAt            DateTime     @default(now()) @db.Timestamp(6)
+  updatedAt            DateTime     @updatedAt
+  account              Account[]    //relation with Account model             
+  session              Session[]    //relation with Session model
+  Cart                 Cart[]       //relation with Cart model
+  Order                Order[]      //relation with Order model
+  Review               Review[]     //relation with Review model
+  wishlist             Wishlist[]   //relation with Wishlist
+  Newsletter           Newsletter[] //relation with Newsletter model
 }
 
 
-//User's Account model
+//User's Account model (nextAuth.js docs)
 model Account {
-  userId            String  @db.Uuid               // a foreign key 
+  userId            String   @db.Uuid    // a foreign key 
   type              String
   provider          String
   providerAccountId String
@@ -77,10 +79,10 @@ model Account {
   scope             String?
   id_token          String?
   session_state     String?
-  createdAt DateTime @default(now()) @db.Timestamp(6)
-  updatedAt DateTime @updatedAt
+  createdAt         DateTime @default(now()) @db.Timestamp(6)
+  updatedAt         DateTime @updatedAt
   //relation to User model: Account model (userId) field will reference to User model (id) field , onDelete: Cascade - if a user is deleted, all the accounts associated with that user will also be deleted
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   //primary key for Account. It is a composite primary key made of the `provider` & `providerAccountId` fields. In many OAuth systems, the combination of the provider (e.g., Google, GitHub) and the providerAccountId (the user's ID from the provider) is guaranteed to be unique, it makes sense to use this as a primary key. Having a separate id field would be redundant.
   @@id([provider, providerAccountId])
 }
@@ -88,13 +90,13 @@ model Account {
 
 //User's Session model (nextAuth.js docs)
 model Session {
-  sessionToken String   @id                      //`@id` - Marks field as a primary key of the table in the db
-  userId       String   @db.Uuid                 // a foreign key 
+  sessionToken String   @id         //`@id` - Marks field as a primary key of the table in the db
+  userId       String   @db.Uuid    // a foreign key 
   expires      DateTime @db.Timestamp(6)
   //relation to User model: Session model (userId) field will reference to User model (id) field , onDelete: Cascade - if a user is deleted, all the sessions associated with that user will also be deleted
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  createdAt DateTime @default(now()) @db.Timestamp(6)
-  updatedAt DateTime @updatedAt
+  createdAt    DateTime @default(now()) @db.Timestamp(6)
+  updatedAt    DateTime @updatedAt
 }
 
 
@@ -112,7 +114,7 @@ model VerificationToken {
 model Cart {
   //`@id` - Marks field as a primary key of the table in the db, `@default(dbgenerated("gen_random_uuid()"))` - generates a random uuid for the id field
   id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  userId        String?  @db.Uuid                  // a foreign key 
+  userId        String?  @db.Uuid         // a foreign key 
   sessionCartId String
   items         Json[]   @default([]) @db.Json
   itemsPrice    Decimal  @db.Decimal(12, 2)
@@ -121,7 +123,7 @@ model Cart {
   totalPrice    Decimal  @db.Decimal(12, 2)
   createdAt     DateTime @default(now()) @db.Timestamp(6)
   //relation to User model: Cart model (userId) field will reference to User model (id) field , onDelete: Cascade - if a user is deleted, all the carts associated with that user will also be deleted
-  user          User?    @relation(fields: [userId], references: [id], onDelete: Cascade)    //? optional because a user can be guest & not logged in
+  user          User?    @relation(fields: [userId], references: [id], onDelete: Cascade) //? optional because a user can be guest & not logged in
 }
 
 
@@ -129,7 +131,7 @@ model Cart {
 model Order {
   //`@id` - Marks field as a primary key of the table in the db, `@default(dbgenerated("gen_random_uuid()"))` - generates a random uuid for the id field
   id              String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  userId          String      @db.Uuid                 // a foreign key
+  userId          String      @db.Uuid       // a foreign key
   shippingAddress Json        @db.Json
   paymentMethod   String
   paymentResult   Json?       @db.Json
@@ -144,14 +146,14 @@ model Order {
   createdAt       DateTime    @default(now()) @db.Timestamp(6)
   //relation to User model: Order model (userId) field will reference to User model (id) field , onDelete: Cascade - if a user is deleted, all the orders associated with that user will also be deleted
   user            User        @relation(fields: [userId], references: [id], onDelete: Cascade)
-  orderItems      OrderItem[]             //relation with OrderItem model
+  orderItems      OrderItem[]    //relation with OrderItem model
 }
 
 
 //OrderItem model (info of each item in the order - separate table from Order to make it flexible and easier to update single item, also to avoid data duplication of product info)
 model OrderItem {
-  orderId   String  @db.Uuid                   // a foreign key
-  productId String  @db.Uuid                   // a foreign key
+  orderId   String  @db.Uuid    // a foreign key
+  productId String  @db.Uuid    // a foreign key
   qty       Int
   price     Decimal @db.Decimal(12, 2)
   name      String
@@ -170,17 +172,17 @@ model OrderItem {
 model Review {
   //`@id` - Marks field as a primary key of the table in the db, `@default(dbgenerated("gen_random_uuid()"))` - generates a random uuid for the id field
   id                 String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  userId             String   @db.Uuid               // a foreign key
-  productId          String   @db.Uuid               // a foreign key
+  userId             String   @db.Uuid     // a foreign key
+  productId          String   @db.Uuid     // a foreign key
   rating             Int
   title              String
   description        String
   isVerifiedPurchase Boolean  @default(true)
   createdAt          DateTime @default(now()) @db.Timestamp(6)
   //relation to Product model: Review model (productId) field will reference to Product model (id) field , onDelete: Cascade - if a product is deleted, all the reviews associated with that product will also be deleted
-  product            Product  @relation(fields: [productId], references: [id], onDelete: Cascade )
+  product            Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
   //relation to User model: Review model (userId) field will reference to User model (id) field , onDelete: Cascade - if a user is deleted, all the reviews associated with that user will also be deleted
-  user               User     @relation(fields: [userId], references: [id], onDelete: Cascade )
+  user               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 
@@ -188,13 +190,30 @@ model Review {
 model Wishlist {
   //`@id` - Marks field as a primary key of the table in the db, `@default(dbgenerated("gen_random_uuid()"))` - generates a random uuid for the id field
   id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  userId    String   @db.Uuid                                  // a foreign key
-  productId String   @db.Uuid                                  // a foreign key
+  userId    String   @db.Uuid        // a foreign key
+  productId String   @db.Uuid        // a foreign key
   createdAt DateTime @default(now()) @db.Timestamp(6)
   //relation to User model: Wishlist model (userId) field will reference to User model (id) field , onDelete: Cascade - if a user is deleted, all the wishlists associated with that user will also be deleted
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   //relation to Product model: Wishlist model (productId) field will reference to Product model (id) field , onDelete: Cascade - if a product is deleted, all the wishlists associated with that product will also be deleted
   product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
   // @@unique preventing duplicates for the same product in the wishlist. This composite unique constraint ensures that a user can only have one wishlist entry for each product.
-  @@unique([userId, productId]) 
+  @@unique([userId, productId])
+}
+
+
+//Newsletter model
+model Newsletter {
+  //`@id` - Marks field as a primary key of the table in the db, `@default(dbgenerated("gen_random_uuid()"))` - generates a random uuid for the id field
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid  
+  subject     String
+  content     String
+  attachments Json?       // JSON array of attachment URLs
+  sentAt      DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  sentCount   Int       @default(0)
+  authorId    String    @db.Uuid          // a foreign key
+  //relation to User model: Newsletter model (authorId) field will reference to User model (id) field , onDelete: Cascade - if a user is deleted, all the newsletters associated will also be deleted
+  author      User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
 }

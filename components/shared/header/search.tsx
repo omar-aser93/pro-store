@@ -30,7 +30,7 @@ const Search = async () => {
         </Select>
 
         {/* Search input field, < name='q'> prop will pass 'q?' as a URL query on submit */}
-        <Input name='q' type='text' placeholder='Search...' className='md:w-[100px] lg:w-[300px]' />
+        <Input name='q' type='text' placeholder='Search...' className='md:w-[100px] lg:w-[300px] rtl:!mr-1' />
 
         {/* Search button */}
         <Button> <SearchIcon /> </Button>

@@ -40,7 +40,7 @@ export async function guestCartId() {
 export async function getMyCart() {
   // Check for stored guest cart Id cookie, if not found, throw an error .. we created this cookie in guestCartId() server-action
   const sessionCartId = (await cookies()).get("sessionCartId")?.value;
-  if (!sessionCartId) throw new Error("Cart Session not found");
+  if (!sessionCartId) console.log("Cart Session not found, refresh the page..");
 
   // Get current user's session to get his ID
   const session = await auth();

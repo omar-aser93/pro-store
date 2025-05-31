@@ -7,17 +7,17 @@ const IconBoxes = () => {
     <div>
       <Card className='my-20'>
         <CardContent className='grid gap-4 md:grid-cols-4 p-4 '>
-          <div className='space-y-2 border-r-2 border-r-slate-200 '>
+          <div className='space-y-2 ltr:border-r-2 ltr:border-r-slate-200 rtl:border-l-2 rtl:border-l-slate-200 '>
             <ShoppingBag />
             <div className='text-sm font-bold'>Free Shipping</div>
             <div className='text-sm text-muted-foreground'> Free shipping for order above $100 </div>            
           </div>
-          <div className='space-y-2 border-r-2 border-r-slate-200'>
+          <div className='space-y-2 ltr:border-r-2 ltr:border-r-slate-200 rtl:border-l-2 rtl:border-l-slate-200'>
             <DollarSign />
             <div className='text-sm font-bold'>Money Back Guarantee</div>
             <div className='text-sm text-muted-foreground'> Within 30 days for an exchange </div>
           </div>
-          <div className='space-y-2 border-r-2 border-r-slate-200'>
+          <div className='space-y-2 ltr:border-r-2 ltr:border-r-slate-200 rtl:border-l-2 rtl:border-l-slate-200'>
             <WalletCards />
             <div className='text-sm font-bold'>Flexible Payment</div>
             <div className='text-sm text-muted-foreground'> Pay with credit card, PayPal or COD </div>

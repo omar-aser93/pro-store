@@ -13,7 +13,7 @@ const ProfileNav = ({ className, ...props }: React.HTMLAttributes<HTMLElement>) 
   const pathname = usePathname();             //usePathname() hook to get the current url pathname
 
   return (
-    <nav className={cn('flex items-center space-x-4 lg:space-x-6', className)} {...props} >
+    <nav className={cn('flex items-center rtl:gap-3 space-x-4 lg:space-x-6', className)} {...props} >
       {/* map over the links array and render each link, change link style if the current pathname includes the link href */}  
       {links.map((item) => (        
       <Link key={item.href} href={item.href} 

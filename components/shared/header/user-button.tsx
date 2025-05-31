@@ -23,7 +23,7 @@ const UserButton = async () => {
     <DropdownMenuTrigger asChild>
       {/* button for the dropdown, it shows the user's first initial */}       
       <div className='flex items-center'>
-        <Button variant='ghost' className='relative w-8 h-8 rounded-full ml-2 flex items-center justify-center bg-gray-300' >
+        <Button variant='ghost' className='relative w-8 h-8 rounded-full ltr:ml-2 rtl:mr-2 flex items-center justify-center bg-gray-300' >
           {firstInitial}
         </Button>
       </div>

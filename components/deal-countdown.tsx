@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { useEffect, useState } from 'react';
-
+import { Skeleton } from "@/components/ui/skeleton"           //shadCN skeleton component
 
 const TARGET_DATE = new Date('2025-12-20T00:00:00');          // Static target date (replace with desired date)
 // Function to calculate time remaining (computes the difference between the target date and the current time)
@@ -38,12 +38,21 @@ const DealCountdown = () => {
     return () => clearInterval(timerInterval);           // Cleanup interval on unmount
   }, []);
 
-  // Render a loading state during hydration
+  // Render a loading skeleton during hydration
   if (!time) {
     return (
-      <section className='grid grid-cols-1 md:grid-cols-2 my-20'>
-        <div className='flex flex-col gap-2 justify-center'>
-          <h3 className='text-3xl font-bold'>Loading Countdown...</h3>
+      <section className='grid grid-cols-1 md:grid-cols-2 !my-16'>
+        {/* Left Text Content Skeleton */}
+        <div className='flex flex-col gap-4 justify-center px-4 '>
+          <Skeleton className='h-8 w-1/2' />                            {/* Title skeleton */}
+          <Skeleton className='h-32 w-full' />                          {/* Paragraph skeleton */}
+          <div className='flex justify-center items-center my-3'>
+            <Skeleton className='h-12 w-48 rounded-md' />               {/* Button skeleton */}
+          </div>
+        </div>  
+        {/* Right Image Skeleton */}
+        <div className='flex justify-center items-center px-4'>
+          <Skeleton className='h-[200px] w-[300px] rounded-md' />
         </div>
       </section>
     );
@@ -52,7 +61,7 @@ const DealCountdown = () => {
   // If the countdown is over, display fallback UI
   if ( time.days === 0 && time.hours === 0 && time.minutes === 0 && time.seconds === 0 ) {
     return (
-      <section className='grid grid-cols-1 md:grid-cols-2 my-20'>
+      <section className='grid grid-cols-1 md:grid-cols-2 !my-16'>
         <div className='flex flex-col gap-2 justify-center'>
           <h3 className='text-3xl font-bold'>Deal Has Ended</h3>
           <p> This deal is no longer available. Check out our latest promotions! </p>
@@ -69,7 +78,7 @@ const DealCountdown = () => {
   }
 
   return (
-    <section className='grid grid-cols-1 md:grid-cols-2 my-20'>
+    <section className='grid grid-cols-1 md:grid-cols-2 !my-16'>
       <div className='flex flex-col gap-2 justify-center'>
         <h3 className='text-3xl font-bold'>Deal Of The Month</h3>
         <p> Get ready for a shopping experience like never before with our Deals of the Month! Every purchase comes with exclusive perks and offers,
@@ -94,10 +103,10 @@ const DealCountdown = () => {
             <p>{'Seconds'}</p> 
           </li>
         </ul>
-      {/* Link to All Products (filtering) page */}
-      <div className='flex justify-center items-center my-8'>
-        <Link href='/search' className='px-8 py-4 text-md font-semibold rounded-md bg-slate-950 text-white hover:opacity-80' > View All Products </Link>        
-      </div>
+        {/* Link to All Products (filtering) page */}
+        <div className='flex justify-center items-center my-8'>
+          <Link href='/search' className='px-8 py-4 text-md font-semibold rounded-md bg-slate-950 text-white hover:opacity-80' > View All Products </Link>        
+        </div>
       </div>
       {/* product Promotional Image & Link */}
       <div className='flex justify-center'>

@@ -216,3 +216,18 @@ export const insertReviewSchema = z.object({
 export type Review = z.infer<typeof insertReviewSchema> & { id: string; createdAt: Date; user?: { name: string }; };
 
 
+//Zod Schema for validating inserting in subscribe form
+export const NewsletterSchema = z.object({
+  email: z.string().email("Invalid email address"),  
+})
+//We use `z.infer` to create an Newsletter TS type
+export type NewsletterType = z.infer<typeof NewsletterSchema>;
+
+
+// Zod Schema for validating Newsletter Form (admin)
+export const newsletterFormSchema = z.object({
+  subject: z.string().min(1, 'Subject is required'),
+  attachments: z.any().optional(), 
+});
+//We use `z.infer` to create an Newsletter form TS type
+export type NewsletterFormData = z.infer<typeof newsletterFormSchema>;

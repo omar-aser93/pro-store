@@ -11,7 +11,7 @@ const GoogleSignin = () => {
   const handleGooglesignIn = () => { startTransition( async() => { await signIn("google")}) };   
   return (
      <div className="w-full max-w-md mx-auto">
-      <Button onClick={handleGooglesignIn} className="w-full"  variant={'outline'} disabled={isPending}> 
+      <Button onClick={handleGooglesignIn} variant={'outline'} disabled={isPending} className="w-full hover:text-gray-700"  > 
         <span className="mr-4 font-bold text-lg"> G </span>  Sign in with Google 
       </Button>
     </div>

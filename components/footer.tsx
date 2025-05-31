@@ -5,7 +5,7 @@ const Footer = () => {
     <footer className='border-t'>
       <div className='p-5 flex-center'>
         {currentYear} {process.env.NEXT_PUBLIC_APP_NAME}. All Rights reserved.
-      </div>
+      </div>          
     </footer>
   );
 };
