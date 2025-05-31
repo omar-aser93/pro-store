@@ -9,9 +9,9 @@ export const metadata: Metadata = {
 };
 
 
-const UnsubscribePage = async ({ searchParams }: { searchParams: { token?: string }; }) => {  
+const UnsubscribePage = async ({ searchParams }: { searchParams: Promise<{ token?: string }>; }) => {  
  
-  const token = searchParams.token;           //get newsletter token from url search params
+  const token = (await searchParams)?.token;           //get newsletter token from url search params
   // if no token, return a div with error message & link to go back home
   if (!token) {
     return (
