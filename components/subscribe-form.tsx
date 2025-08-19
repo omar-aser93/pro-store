@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button"
 import { Form, FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { useToast } from '@/hooks/use-toast';
+import { useTranslations } from "next-intl";
 
 
 //Subscribe component, using shadcn form components
@@ -18,6 +19,7 @@ const SubscribeForm = () => {
 
   const { toast } = useToast();                           //use toast hook to show success/error messages (shadcn)
   const [isPending, startTransition] = useTransition();   //useTransition() hook to allow pending state while submitting/event
+  const t = useTranslations('Home');                      //useTranslations hook to get translation function for (Home)
 
   //useForm hook to create a form with zodResolver and defaultValues
   const form = useForm<NewsletterType>({ resolver: zodResolver(NewsletterSchema), defaultValues: { email: "" } })
@@ -39,8 +41,8 @@ const SubscribeForm = () => {
   return (
   <Form {...form}>
     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-3 p-4 rounded-md border-gray-300 border-[1px] flex flex-col justify-center w-full">
-      <h2 className="h2-bold mx-auto">Subscribe to our newsletter</h2>   
-      <p className="mx-auto py-2" >Get the latest news and updates on our products and special offers</p>
+      <h2 className="h2-bold mx-auto">{t("subscribe")}</h2>   
+      <p className="mx-auto py-2" >{t("subscribe-desc")}</p>
 
       {/* Email input */}
       <FormField control={form.control} name="email" render={({ field }) => (
@@ -51,7 +53,7 @@ const SubscribeForm = () => {
       )} />
 
       {/* Subscribe button */}
-      <Button type="submit" className="w-1/2 mx-auto" disabled={isPending}> {isPending ? 'Subscribing...' : 'Subscribe'} </Button>
+      <Button type="submit" className="w-1/2 mx-auto" disabled={isPending}> {isPending ? t("subscribe-btn-active") : t("subscribe-btn")} </Button>
     </form>
   </Form>
   )

@@ -1,4 +1,5 @@
 import { notFound } from 'next/navigation';      //get not-found.tsx we created, from next/navigation (to use it manually)
+import { Metadata } from "next";
 import { auth } from '@/auth';
 import Link from 'next/link';
 import ProductPrice from '@/components/shared/product/product-price';
@@ -16,6 +17,15 @@ import ShareButton from '@/components/shared/product/share-button';
 //shadcn components
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+
+// generate dynamic metadata for the page
+export async function generateMetadata(props: { params: Promise<{ slug: string }> }): Promise<Metadata> {
+  // Fetch the product by slug param... if not found, return metadata with title 'Product Not Found', else return product metadata details + openGraph metadata (for social media sharing)
+  const product = await getProductBySlug((await props.params).slug);
+  if (!product) return { title: 'Product Not Found' };
+  return { title: `${product.name}`, description: product.description, keywords: [product.name, product.brand, product.category], openGraph: { title: product.name, description: product.description, images: [{ url: product.images?.[0] || '' }] }
+ };
+}
 
 
 // Product Details Page , we set the [slug] url params TS type (Promise<{ slug: string }>)

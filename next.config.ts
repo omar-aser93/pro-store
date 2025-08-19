@@ -4,8 +4,9 @@ import createNextIntlPlugin from 'next-intl/plugin';               // next-intl 
 const nextConfig: NextConfig = {
   images: {
     remotePatterns: [
-      { protocol: 'https', hostname: 'utfs.io', port: '' },        // upload-thing lib setup    
-    ],
+      { protocol: 'https', hostname: 'utfs.io', port: '' },           // upload-thing lib setup 
+      { protocol: 'https', hostname: '**.ufs.sh', port: '' },         // ✅ allow all UploadThing new subdomains    
+    ],      
   },
 };
 

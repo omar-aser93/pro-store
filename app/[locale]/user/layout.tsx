@@ -2,6 +2,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import ProfileNav from '@/components/profile-nav';
 import Menu from '@/components/shared/header/menu';
+import { UserChatWidget } from '@/components/chat/UserChatWidget';
 
 
 //Layout we created for user route pages
@@ -25,6 +26,9 @@ export default function UserLayout({ children }: Readonly<{ children: React.Reac
         <div className='flex-1 space-y-4 p-8 pt-6 container mx-auto'>
           {children}
         </div>
+
+        {/* Chat Widget component */}
+        <UserChatWidget />
       </div>
     </>
   );

@@ -61,8 +61,9 @@ export type signUpType = z.infer<typeof signUpFormSchema> & { callbackUrl: strin
 
 // Zod Schema for forgot-Password email input
 export const forgotPasswordSchema = z.object({
-  email: z.string().email('Invalid email address').min(3, 'Email must be at least 3 characters'),
-});
+  email: z.string().email().optional(),
+  phone: z.string().regex(/^\+?\d{10,15}$/, { message: "Phone number must be 10–15 digits and may start with +" }).optional(),
+}).refine((data) => data.email || data.phone, { message: "Please provide either email or phone", path: ["email"]});
 //We use `z.infer` to create a forgotPassword TS type
 export type forgotPasswordType = z.infer<typeof forgotPasswordSchema>;
 
@@ -71,8 +72,8 @@ export type forgotPasswordType = z.infer<typeof forgotPasswordSchema>;
 export const otpSchema = z.object({
   otp: z.string().length(6, "OTP must be exactly 6 digits").regex(/^\d{6}$/, "OTP must contain only digits"),
 });
-//We use `z.infer` to create a otp TS type & include all fields of the Schema + email (passed as a query param to the verify-otp page)
-export type otpType = z.infer<typeof otpSchema> & { email: string };  
+//We use `z.infer` to create a otp TS type & include all fields of the Schema + email/phone (passed as a query param to the verify-otp page)
+export type otpType = z.infer<typeof otpSchema> & { email?: string; phone?: string };  
 
 
 // Zod Schema for validating Reset Password 
@@ -82,14 +83,15 @@ export const resetPasswordSchema = z.object({
   //.refine() to add a custom validation for passwords matching 
   .refine((data) => data.newPassword === data.confirmPassword, { path: ["confirmPassword"], message: "Passwords do not match" 
 });
-//We use `z.infer` to create a resetPassword TS type & include all fields of the Schema + email (passed as a query param to the page)
-export type resetPasswordType = z.infer<typeof resetPasswordSchema> & { email: string };  
+//We use `z.infer` to create a resetPassword TS type & include all fields of the Schema + email/phone (passed as a query param to the page)
+export type resetPasswordType = z.infer<typeof resetPasswordSchema> & { email?: string; phone?: string; };  
 
 
 // Zod Schema for validating Update Profile 
 export const updateProfileSchema = z.object({
   name: z.string().min(3, 'Name must be at least 3 characters'),
   email: z.string().min(3, 'Email must be at least 3 characters'),
+  phone: z.string().regex(/^\+?\d{10,15}$/, "Phone number must be 10–15 digits and may start with +").optional().or(z.literal('')).or(z.null()),
 });
 //We use `z.infer` to create an updateProfile TS type
 export type updateProfileType = z.infer<typeof updateProfileSchema>;
@@ -119,7 +121,7 @@ export type cartItemType = z.infer<typeof cartItemSchema>;
 
 //Zod Schema for validating insert Cart
 export const insertCartSchema = z.object({
-  items: z.array(cartItemSchema),                     //array of cartItem Schemas (we created it above this schema)
+  items: z.array(cartItemSchema),                   //array of cartItem Schemas (we created it above this schema)
   itemsPrice: currency,
   totalPrice: currency,
   shippingPrice: currency,
@@ -231,3 +233,69 @@ export const newsletterFormSchema = z.object({
 });
 //We use `z.infer` to create an Newsletter form TS type
 export type NewsletterFormData = z.infer<typeof newsletterFormSchema>;
+
+
+// multi language schema (will be used for title and description) of (deal of the month) Zod Schema
+const LanguageSchema = z.object({lang: z.string().min(2), content: z.string().min(3)})
+// Zod Schema for (deal of the month) form validation (admin)
+export const dealFormSchema = z.object({
+  titles: z.array(LanguageSchema).min(1, { message: "At least one title is required" }),
+  descriptions: z.array(LanguageSchema).min(1, { message: "At least one description is required" }),
+  imageUrl: z.string().min(1, 'Image is required'),
+  imageLink: z.string().optional().nullable(),
+  buttonLink: z.string().default('/search'),
+  targetDate: z.coerce.date()
+})
+//We use `z.infer` to create a Deal form TS type
+export type DealFormType = z.infer<typeof dealFormSchema>;
+
+
+// Zod Schema for validating sending a chat Message
+export const sendMessageSchema = z.object({
+  chatId: z.string().min(1),
+  content: z.string().optional(),
+  fileUrl: z.string().optional(),
+  fileType: z.string().optional().nullable(), 
+});
+//We use `z.infer` to create a SendMessageInput TS type
+export type SendMessageType = z.infer<typeof sendMessageSchema>;
+
+
+// Message schema (received/displayed message) Type
+export const messageSchema = z.object({
+  id: z.string(),
+  content: z.string().nullable().optional(), 
+  fileUrl: z.string().nullable().optional(),
+  fileType: z.string().nullable().optional(),
+  createdAt: z.date(),
+  isRead: z.boolean(),
+  isEdited: z.boolean().optional(),     
+  isDeleted: z.boolean().optional(),
+  sender: z.object({
+    id: z.string(),
+    name: z.string(),
+    email: z.string(),
+    role: z.string()
+  }),
+});
+// we use `z.infer` to create a Message TS type
+export type MessageType = z.infer<typeof messageSchema>;
+
+
+// Chat schema (for chat Type), it includes the chat's messages and user information
+export const chatSchema = z.object({
+  id: z.string(),
+  userId: z.string(),
+  createdAt: z.date(),
+  updatedAt: z.date(),
+  isActive: z.boolean(),
+  lastMessage: z.string().optional(),  
+  messages: z.array(messageSchema),
+  user: z.object({
+    id: z.string(),
+    name: z.string(),
+    email: z.string(),
+  }),
+});
+// We use `z.infer` to create a Chat TS type
+export type ChatType = z.infer<typeof chatSchema>;

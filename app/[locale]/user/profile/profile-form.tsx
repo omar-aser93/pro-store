@@ -20,7 +20,7 @@ const ProfileForm = () => {
 
   //useForm hook, pass (Zod Schema & type) to the zodResolver of "react-hook-form" & set default values
   const form = useForm<updateProfileType>({ resolver: zodResolver(updateProfileSchema),
-    defaultValues: { name: session?.user?.name ?? '', email: session?.user?.email ?? '' },
+    defaultValues: { name: session?.user?.name ?? '', email: session?.user?.email ?? '', phone: session?.user?.phone ?? '' },
   });  
 
   // Handle form Submit to update profile
@@ -28,7 +28,7 @@ const ProfileForm = () => {
     const res = await updateProfile(values);         //server-action to update user's profile, pass the form values  
     if (!res.success) return toast({ variant: 'destructive', description: res.message });   //if error, show error in a toast
     //create a new session object with the updated user data  
-    const newSession = { ...session, user: { ...session?.user, name: values.name } };    
+    const newSession = { ...session, user: { ...session?.user, name: values.name, phone: values.phone } };    
     await update(newSession);                    //update the session with the new session object  
     toast({ description: res.message });         //show success message in a toast
   }
@@ -37,24 +37,33 @@ const ProfileForm = () => {
     <Form {...form}>
        <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-5">
         <div className='flex flex-col gap-5'>
-          {/* Email input .. disabled */}  
+          {/* Email input .. disabled/readonly because email is part of sign-in/sign-up */}  
           <FormField control={form.control} name='email' render={({ field }) => (
-              <FormItem className='w-full'>
-                <FormControl>
-                  <Input disabled placeholder='Email' {...field} className='input-field' />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-           )} />
-           {/* Name input */}
+            <FormItem className='w-full'>
+              <FormControl>
+                <Input disabled placeholder='Email' {...field} className='input-field' />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )} />
+          {/* Name input */}
           <FormField control={form.control} name='name' render={({ field }) => (
-              <FormItem className='w-full'>
-                <FormControl>
-                  <Input placeholder='Name' {...field} className='input-field' />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
+            <FormItem className='w-full'>
+              <FormControl>
+                <Input placeholder='Name' {...field} className='input-field' />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
            )} />
+           {/* Phone input */}
+           <FormField control={form.control} name='phone' render={({ field }) => (
+            <FormItem className='w-full'>
+              <FormControl>
+                <Input placeholder='Phone number' {...field} className='input-field' type='tel' value={field.value ?? ''}/>
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+            )} />        
         </div>
         {/* Submit button, disabled if form is submitting (using formState.isSubmitting from "react-hook-form") */}
         <Button type='submit' size='lg' disabled={form.formState.isSubmitting} className='button col-span-2 w-full' >

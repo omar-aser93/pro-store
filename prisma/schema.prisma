@@ -50,12 +50,13 @@ model User {
   image                String?
   address              Json?        @db.Json   //`@db.Json` - maps the field to a JSON object type in the db {street: '...', city: '...', postalCode: '...'}
   paymentMethod        String?
+  phone                String?      @unique
   otp                  String?
   otpExpires           DateTime?    @db.Timestamp(6)
   newsletterSubscribed Boolean      @default(false)
   newsletterToken      String?      @unique
   createdAt            DateTime     @default(now()) @db.Timestamp(6)
-  updatedAt            DateTime     @updatedAt
+  updatedAt            DateTime     @updatedAt  
   account              Account[]    //relation with Account model             
   session              Session[]    //relation with Session model
   Cart                 Cart[]       //relation with Cart model
@@ -63,6 +64,8 @@ model User {
   Review               Review[]     //relation with Review model
   wishlist             Wishlist[]   //relation with Wishlist
   Newsletter           Newsletter[] //relation with Newsletter model
+  Chat                 Chat[]       //relation with Chat model
+  Message              Message[]    //relation with Message model
 }
 
 
@@ -216,4 +219,54 @@ model Newsletter {
   authorId    String    @db.Uuid          // a foreign key
   //relation to User model: Newsletter model (authorId) field will reference to User model (id) field , onDelete: Cascade - if a user is deleted, all the newsletters associated will also be deleted
   author      User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
+}
+
+
+//Deal of the month model
+model Deal {
+  //`@id` - Marks field as a primary key of the table in the db, `@default(dbgenerated("gen_random_uuid()"))` - generates a random uuid for the id field
+  id           String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  titles       Json      // [{ lang: "en", content: "Deal of the month" }, ...]
+  descriptions Json      // [{ lang: "en", content: "Long description..." }, ...]
+  imageUrl     String
+  imageLink    String?   // Optional product link for image
+  buttonLink   String    @default("/search")
+  targetDate   DateTime
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+}
+
+
+//Chat model
+model Chat {
+  //`@id` - Marks field as a primary key of the table in the db, `@default(dbgenerated("gen_random_uuid()"))` - generates a random uuid for the id field
+  id        String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId    String    @db.Uuid               // a foreign key
+  //relation to User model: Chat model (userId) field will reference to User model (id) field , onDelete: Cascade - if a user is deleted, all the chats associated with that user will also be deleted
+  user      User      @relation(fields: [userId], references: [id])  
+  messages  Message[]                       //relation with Message model
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  isActive  Boolean   @default(true)        // To mark chats as active/archived
+}
+
+
+//Message model
+model Message {
+  //`@id` - Marks field as a primary key of the table in the db, `@default(dbgenerated("gen_random_uuid()"))` - generates a random uuid for the id field
+  id        String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  chatId    String    @db.Uuid     // a foreign key
+  //relation to Chat model: Message model (chatId) field will reference to Chat model (id) field , onDelete: Cascade - if a chat is deleted, all the messages associated with that chat will also be deleted
+  chat      Chat      @relation(fields: [chatId], references: [id])
+  senderId  String    @db.Uuid     // a foreign key
+  //relation to User model: Message model (senderId) field will reference to User model (id) field , onDelete: Cascade - if a user is deleted, all the messages associated with that user will also be deleted
+  sender    User      @relation(fields: [senderId], references: [id])
+  content   String?
+  fileUrl   String?
+  fileType  String?                         // To distinguish between different file types
+  isRead    Boolean   @default(false)       // For message read status
+  isDeleted Boolean   @default(false)       // To show a message as deleted
+  isEdited  Boolean   @default(false)       // To show a message as edited
+  createdAt DateTime  @default(now())
+  updatedAt DateTime?  @updatedAt
 }

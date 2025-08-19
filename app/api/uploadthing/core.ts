@@ -20,7 +20,7 @@ export const ourFileRouter = {
   //after user id returns from the middleware, pass it in metadata to the `onUploadComplete` callback.
   .onUploadComplete(async ({ metadata }) => { return { uploadedBy: metadata.userId } }),
 
-  // Multi-file endpoint for different files uploads (e.g., newsletter attachments) 
+  // Multi-file endpoint for different files uploads (e.g., newsletter attachments, chat, ...) 
   fileUploader: f({
     // Define multiple file types with their size limits
     image: { maxFileSize: '4MB', maxFileCount: 5 },

@@ -21,7 +21,7 @@ const ForgotPasswordPage = () => {
         </Link>
         {/* Card title & description */}
         <CardTitle className="text-center">Forgot Password</CardTitle>
-        <CardDescription className="text-center"> Enter your email to recieve a code to reset your password </CardDescription>
+        <CardDescription className="text-center"> Enter your email/phone to recieve a code to reset your password </CardDescription>
       </CardHeader>
       {/* Form component */}
       <CardContent className="space-y-3"><ForgotForm /></CardContent>

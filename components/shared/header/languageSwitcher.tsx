@@ -33,7 +33,7 @@ export default function LanguageSwitcher() {
       <DropdownMenuTrigger asChild>
         {/* Button to trigger the dropdown menu, shows the current locale label and globe icon */}
         <Button variant="outline" size="sm" className="flex items-center gap-2 py-5" aria-label="Change language">
-          <Globe className="h-4 w-4" /> {localesData.find(L => L.lang === currentLocale)?.label} 
+          <Globe className="h-4 w-4" /><span className='hidden sm:block'>{localesData.find(L => L.lang === currentLocale)?.label}</span>
         </Button>
       </DropdownMenuTrigger>
 

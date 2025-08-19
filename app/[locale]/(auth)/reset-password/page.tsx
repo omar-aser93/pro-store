@@ -21,7 +21,7 @@ const ResetPasswordPage = () => {
         </Link>
         {/* Card title & description */}
         <CardTitle className="text-center">Reset Password</CardTitle>
-        <CardDescription className="text-center"> Enter a new password to reset your password </CardDescription>
+        <CardDescription className="text-center"> Enter a new password for your account </CardDescription>
       </CardHeader>
       {/* Form component */}
       <CardContent className="space-y-3"><ResetPasswordForm /></CardContent>

@@ -19,6 +19,7 @@ const ResetPasswordForm = () => {
   const router = useRouter();                                    //useRouter hook to redirect to a page
   const searchParams = useSearchParams();                        //getting URL searchParams in a client component using useSearchParams() hook
   const email = searchParams.get('email') || '';                 //we set a email const with it's URL param value
+  const phone = searchParams.get("phone") || '';                 //we set a phone const with it's URL param value
   const [showPassword, setShowPassword] = useState(false);       //state to show/hide password
   
   //useActionState hook .. [data is the state returned from the server_action, action we pass it to form action={}, isPending: status of the req] = useActionState(server_action name, initial state)
@@ -31,7 +32,8 @@ const ResetPasswordForm = () => {
 
   //function to handle "react-hook-form" submit & startTransition to allow pending state
   const onSubmit = (values: resetPasswordType) => {
-    startTransition(() => action({ ...values, email }));     //pass (form data & email url param) to the server_action
+    //pass (form data & email/phone url param) to the server_action
+    startTransition(() => action({ ...values, ...(email && { email }), ...(phone && { phone }) }));     
   };
 
   // Redirect to sign-in page on success

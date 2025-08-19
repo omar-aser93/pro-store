@@ -21,7 +21,7 @@ const VerifyOtpPage = () => {
         </Link>
         {/* Card title & description */}
         <CardTitle className="text-center">Verify Otp</CardTitle>
-        <CardDescription className="text-center"> Enter the code you recieved on your email to reset your password </CardDescription>
+        <CardDescription className="text-center"> Enter the code you recieved to reset your password </CardDescription>
       </CardHeader>
       {/* Form component */}
       <CardContent className="space-y-3"><VerifyOtpForm /></CardContent>

@@ -13,7 +13,7 @@ const Search = async () => {
   return (
     //< action='/search' method='GET'>, Submission redirects to '/search', method='GET' to pass form data as URL queries
     <form action='/search' method='GET'>
-      <div className='flex w-full max-w-sm items-center space-x-2'>
+      <div className='flex xs:w-full w-[85%] max-w-sm items-center mx-auto space-x-2'>
 
         {/* Select options for categories, < name='category'> prop will pass 'category?' as a URL query on submit */}
         <Select name='category'>

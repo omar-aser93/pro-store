@@ -8,9 +8,9 @@ import { prisma } from '@/db/prisma';
 import { PrismaAdapter } from '@auth/prisma-adapter';
 import { cookies } from 'next/headers';
 
-//TS fix for (role) in session, by default the NextAuth session user type only has a name, email and id. we extend it with extra properties (e.g. role)
+//TS fix for (role, phone) in session, by default the NextAuth session user type only has a name, email and id. we extend it with extra properties (e.g. role)
 declare module 'next-auth' {
-  export interface Session { user: { role: string; } & DefaultSession['user'];  }
+  export interface Session { user: { role: string; phone: string; } & DefaultSession['user'];  }
 }
 
 
@@ -32,7 +32,7 @@ export const config = {
         if (user && user.password) {
           const isMatch = compareSync( credentials.password as string, user.password );         
           // If password is correct, return the user object for the session
-          if (isMatch) { return { id: user.id, name: user.name, email: user.email, role: user.role }; }
+          if (isMatch) { return { id: user.id, name: user.name, email: user.email, role: user.role, phone: user.phone }; }
         }
         // If user doesn't exist or password is incorrect, return null
         return null;
@@ -51,7 +51,8 @@ export const config = {
       // Map the token data to the session object
       session.user.id = token.id;
       session.user.name = token.name; 
-      session.user.role = token.role;       
+      session.user.role = token.role; 
+      session.user.phone = token.phone;      
       return session;
     },
     //`jwt` callback used to customize jwt & called whenever a JWT token is created (when a user signs in or signs up)
@@ -60,15 +61,13 @@ export const config = {
       if (user) {
         token.id = user.id;                     // Add user id to the token data
         token.role = user.role;                 // Add user role to the token data
+        token.phone = user.phone;               // Add user phone to the token data
         // If user has no name, use email as their default name, then Update the user in the db with the new name
         if (user.name === 'NO_NAME') {
           token.name = user.email!.split('@')[0];          
           await prisma.user.update({ where: { id: user.id }, data: { name: token.name } });
         }
-        // if the session user updated his name, Update the token data with the new name (without re-logging)
-        if (session?.user.name && trigger === 'update') { token.name = session.user.name; }
-
-        // ** Manually Handling persisting a guest cart to the user when he signs in**                             
+        // ** Manually Handling persisting a guest cart to the user when he signs in **                             
         const sessionCartId = (await cookies()).get("sessionCartId")?.value;     // Get sessionCartId cookie for the guest cart (Next.js cookies)
         if (sessionCartId) {      
           const sessionCart = await prisma.cart.findFirst({ where: { sessionCartId } });  //Find guest cart by the sessionCartId in the DB
@@ -78,6 +77,11 @@ export const config = {
           }
         }
       } 
+      // if the session user updated his profile, Update the token data with his new data (without re-logging) used in profile page
+      if (trigger === 'update') {
+        if (session?.user.name) token.name = session.user.name;
+        if (session?.user.phone) token.phone = session.user.phone; 
+      }
       return token;
     },  
   },

@@ -3,7 +3,7 @@
 import { prisma } from '@/db/prisma';                 //import the Prisma client from prisma.ts, the file we created
 import { convertToPlainObject } from '../utils';      //utility function to convert Prisma objects to plain js objects
 import { revalidatePath } from 'next/cache';          //used to revalidate the cache of a specific path (we use it with POST/PUT/DELETE actions)
-import { insertProductSchema, Product, updateProductSchema, updateProductType } from '../validator';    //import zod Schemas/types from validator.ts
+import { dealFormSchema, DealFormType, insertProductSchema, Product, updateProductSchema, updateProductType } from '../validator';    //import zod Schemas/types from validator.ts
 import { Prisma } from '@prisma/client';
 
 
@@ -125,5 +125,36 @@ export async function updateProduct(data: updateProductType) {
     return { success: true, message: 'Product updated successfully' };           //if success, return success message
   } catch {
     return { success: false, message: 'Failed to update product, try again later' };    //if error, return error message
+  }
+}
+
+
+
+// get deal of the month server-action
+export async function getDeal() {
+  // find latest deal by targetDate & return it after parsing & validating it with Zod schema (avoid prisma JSON type error)
+  const deal = await prisma.deal.findFirst({ orderBy: { targetDate: "desc" } }); 
+  if (!deal) return null; 
+  return dealFormSchema.parse(deal);
+}
+
+
+
+// create/update (deal of the month) server-action (admin), receives the form data
+export async function createDeal(data: DealFormType) {
+    
+  const parsed = dealFormSchema.parse(data);            // Parse and validate the received data with Zod schema
+  const existingDeal = await prisma.deal.findFirst();   // Check if a deal already exists
+
+  // If a deal already exists, update it, otherwise create a new one
+  if (existingDeal) {    
+    await prisma.deal.update({
+      where: { id: existingDeal.id },
+      data: { titles: parsed.titles, descriptions: parsed.descriptions, imageUrl: parsed.imageUrl, imageLink: parsed.imageLink, buttonLink: parsed.buttonLink, targetDate: parsed.targetDate },
+    });
+  } else {    
+    await prisma.deal.create({
+      data: { titles: parsed.titles, descriptions: parsed.descriptions, imageUrl: parsed.imageUrl, imageLink: parsed.imageLink, buttonLink: parsed.buttonLink, targetDate: parsed.targetDate }
+    });
   }
 }

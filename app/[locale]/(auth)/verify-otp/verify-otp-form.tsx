@@ -18,6 +18,7 @@ const VerifyOtpForm = () => {
   const router = useRouter();                             // useRouter hook to navigate programmatically
   const searchParams = useSearchParams();                 // useSearchParams hook to access URL query parameters
   const email = searchParams.get('email') || '';          // Get email from URL query parameters
+  const phone = searchParams.get("phone") || '';          // Get phone from URL query parameters
 
   //State to manage the OTP input as an array of strings (6 digits), useRef hook to store references to the input elements
   const [otp, setOtp] = useState(Array(6).fill(''));
@@ -32,12 +33,12 @@ const VerifyOtpForm = () => {
   const [canResend, setCanResend] = useState(false);        // State to manage whether the resend button is enabled or not
 
   //Define useForm hook & pass (Zod Schema & type) to the zodResolver of "react-hook-form" + bind the email param to the form default values
-  const { handleSubmit, setValue, formState: { errors }} = useForm<otpType>({ resolver: zodResolver(otpSchema), defaultValues: { otp: '', email } });
+  const { handleSubmit, setValue, formState: { errors }} = useForm<otpType>({ resolver: zodResolver(otpSchema), defaultValues: { otp: '', email, phone } });
 
   //at useActionState() success, redirect to reset-password page with email as query param
   useEffect(() => {
-    if (data.success) { router.push(`/reset-password?email=${email}`) }
-  }, [data.success, email, router]);
+    if (data.success) { router.push(`/reset-password?${email ? `email=${encodeURIComponent(email)}` : `phone=${encodeURIComponent(phone)}`}`) }
+  }, [data.success, email, phone, router]);
 
   //useEffect hook to manage the countdown timer for resending OTP
   useEffect(() => {
@@ -104,12 +105,14 @@ const VerifyOtpForm = () => {
 
   //function to handle "react-hook-form" submit & startTransition to allow pending state 
   const onSubmit = () => {
-    startTransition(() => action({ otp: otp.join(''), email }));    //pass (OTP form data & email url param) to the server_action
+    //pass (OTP form data & email/phone url param) to the server_action
+    startTransition(() => action({ otp: otp.join(''), ...(email && { email }), ...(phone && { phone }) }));   
   };
 
   //function to handle resend OTP button click & startTransition to allow pending state
   const handleResend = () => {
-    startTransition(() => resendAction({ email }));         //pass (email url param) to the send-otp server_action
+    //pass (email/phone url param) to the send-otp server_action
+    startTransition(() => resendAction( email ? { email } : { phone } ));      
     setTimeLeft(60);                     // Reset the countdown timer to 60 seconds
     setCanResend(false);                 // Disable the resend button until the countdown is over
   };

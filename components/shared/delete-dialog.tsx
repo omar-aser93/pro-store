@@ -33,7 +33,7 @@ export default function DeleteDialog({ id, action }: { id: string; action: (id: 
     <AlertDialog open={open} onOpenChange={setOpen}>
       {/* Delete button that opens the Dialog - asChild is used with shadcn components that have button/Link child as trigger */}  
       <AlertDialogTrigger asChild>        
-        <Button size='sm' variant='outline'><Trash2 className="text-red-500 hover:scale-110 transition-all cursor-pointer ml-2" /> Delete </Button>
+        <Button size='sm' variant='outline'><Trash2 className="text-red-500 hover:scale-110 transition-all cursor-pointer" /> Delete </Button>
       </AlertDialogTrigger>
 
       <AlertDialogContent>

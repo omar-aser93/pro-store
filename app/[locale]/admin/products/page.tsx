@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import Pagination from '@/components/shared/pagination';
 import DeleteDialog from '@/components/shared/delete-dialog';
+import { DealEditor } from '@/components/shared/admin/deal-form';
 import { formatCurrency, formatId } from '@/lib/utils';
 import { SquarePen } from 'lucide-react';         //icons library auto installed by shadcn
 import { getAllProducts, deleteProduct } from '@/lib/actions/product.actions';
@@ -33,11 +34,14 @@ const ProductsPage = async (props: {searchParams: Promise<{ query: string; page:
           <div> Filtered by <i>&quot;{searchParams.query}&quot;</i> {' '} 
             <Link href={`/admin/products`}><Button variant='outline' size='sm'> <span>X</span> Remove Filter </Button></Link>
           </div> )}
-        </div>
+        </div>        
+        <div>
+        <DealEditor />           {/* DealEditor component to create/update deal of the month */}
         {/* Create Product Link, asChild is used with shadcn components that have button/Link child as trigger */}
         <Button asChild variant='default'>
           <Link href='/admin/products/create'>Create Product</Link>
         </Button>
+        </div>
       </div>
 
       <div className='overflow-x-auto'>
@@ -67,7 +71,7 @@ const ProductsPage = async (props: {searchParams: Promise<{ query: string; page:
                 <TableCell>{product.stock}</TableCell>
                 <TableCell>{product.rating}</TableCell>
                 <TableCell className='flex gap-1'>
-                  {/* Edit Product Link */}
+                  {/* Edit Product Link */}                  
                   <Button variant='outline' size='sm' >
                     <Link href={`/admin/products/${product.id}`} className='flex items-center justify-between gap-2 mx-2'><SquarePen /> Edit </Link>      
                   </Button>

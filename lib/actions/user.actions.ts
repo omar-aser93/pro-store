@@ -3,9 +3,10 @@
 import { isRedirectError } from 'next/dist/client/components/redirect-error';   //`isRedirectError` function used to check if error is a redirect error
 import { auth, signIn, signOut } from '@/auth';      //import the signIn and signOut functions from auth.ts
 import { sendOTPEmail } from "@/email";              //import (resend lib) sendOTPEmail Function we created
+import { sendOTPSMS } from '@/lib/sms';              //import sendOTPSMS Function we created in sms.ts
 import { revalidatePath } from 'next/cache';         //used to revalidate the cache of a specific path (we use it with POST/PUT/DELETE actions)
 //import zod Schemas/types from validator.ts
-import { forgotPasswordType, otpType, paymentMethodSchema, paymentMethodType, resetPasswordType, shippingAddressSchema, shippingAddressType, signInType, signUpType, updateUserType} from '../validator';     
+import { forgotPasswordType, otpType, paymentMethodSchema, paymentMethodType, resetPasswordType, shippingAddressSchema, shippingAddressType, signInType, signUpType, updateProfileType, updateUserType} from '../validator';     
 import { hashSync } from 'bcrypt-ts-edge';           //hashing function from bcrypt-ts library
 import { prisma } from '@/db/prisma';                //import the Prisma object from prisma.ts, the file we created
 import { Prisma } from '@prisma/client';             //import the Prisma client
@@ -58,8 +59,11 @@ export async function signUp(prevState: unknown, data: signUpType) {
 //send otp for forgot password server-action, receives the form data .. prevState is used with useActionState() in the form component
 export async function sendForgotPasswordOTP(prevState: unknown, data: forgotPasswordType) {
   try{
-    //check if the user exists in the db, if not return error message 
-    const user = await prisma.user.findUnique({ where: { email: data.email } });
+    // check the method the user is using to get the OTP (email or phone)
+    const method = data.email ? { email: data.email } : { phone: data.phone! };
+
+    //check if the user exists in the db by either recieved (email or phone), if not return error message 
+    const user = await prisma.user.findUnique({ where: method });
     if (!user) { return { success: false, message: 'User doesn\'t exist' }; }
 
     //generate a random OTP and set it to expire in 10 minutes
@@ -67,8 +71,14 @@ export async function sendForgotPasswordOTP(prevState: unknown, data: forgotPass
     const otpExpires = new Date(Date.now() + 10 * 60 * 1000);
 
     //update the user's OTP and expiration date in the db using Prisma & passing the generated OTP and expiration date
-    await prisma.user.update({ where: { email: data.email }, data: { otp, otpExpires } });
-    await sendOTPEmail(data.email, otp);         //send OTP email using the (resend lib) sendOTPEmail function we created
+    await prisma.user.update({ where: method, data: { otp, otpExpires } });
+
+    // if we received an email, send the OTP via email... otherwise, if we received a phone number, send it via SMS
+    if (data.email) {
+      await sendOTPEmail(data.email, otp);
+    } else {
+      await sendOTPSMS(data.phone!, otp);
+    }            
     
     return { success: true, message: 'OTP sent successfully' };        //return success message, will be used in useActionState()
   } catch (error) {
@@ -82,8 +92,11 @@ export async function sendForgotPasswordOTP(prevState: unknown, data: forgotPass
 // Verify OTP server-action, receives the form data .. prevState is used with useActionState() in the form component
 export async function verifyOTP(prevState: unknown, data: otpType) {
   try{
+    // check the method the user is using to get the OTP (email or phone)
+    const method = data.email ? { email: data.email } : { phone: data.phone! };
+
     //check if the user exists in the db and if the recieved OTP is the same as the one in the db, if not return error message
-    const user = await prisma.user.findUnique({ where: { email: data.email } });
+    const user = await prisma.user.findUnique({ where: method });    
     if (!user || user.otp !== data.otp) { return { success: false, message: "Invalid OTP" }; }
     //check if the OTP is expired, if yes return error message
     if (user.otpExpires && new Date() > user.otpExpires) { return { success: false, message: "OTP expired" }; }
@@ -100,13 +113,16 @@ export async function verifyOTP(prevState: unknown, data: otpType) {
 // Reset password server-action, receives the form data .. prevState is used with useActionState() in the form component
 export async function resetPassword(prevState: unknown, data: resetPasswordType) {
   try {
+    // check the method the user is using to get the OTP (email or phone)
+    const method = data.email ? { email: data.email } : { phone: data.phone! };
+
     //check if the user exists in the db, if not return error message
-    const user = await prisma.user.findUnique({ where: { email: data.email } });
+    const user = await prisma.user.findUnique({ where: method });
     if (!user) { return { success: false, message: 'User doesn\'t exist' }; }
 
     const hashedPassword = hashSync(data.newPassword, 10);     //hash the new password to secure it before saving it in the DB
-    //update the user's password in the db using Prisma & passing the hashed password & resetting the OTP 
-    await prisma.user.update({ where: { email: data.email }, data: { password: hashedPassword, otp: null, otpExpires: null } });
+    //update the user's password in the db using Prisma & passing the hashed password & resetting the OTP values
+    await prisma.user.update({ where: method, data: { password: hashedPassword, otp: null, otpExpires: null } });
  
     return { success: true, message: 'Password reset successfully' };        //return success message, will be used in useActionState()
   } catch (error) {
@@ -168,7 +184,7 @@ export async function updateUserPaymentMethod( data: paymentMethodType) {
 
 
 // Update User's Profile server-action
-export async function updateProfile(user: { name: string; email: string }) {
+export async function updateProfile(user: updateProfileType) {
   try {
     // Get current user's session to get his ID
     const session = await auth();
@@ -179,7 +195,7 @@ export async function updateProfile(user: { name: string; email: string }) {
     if (!currentUser) throw new Error('User not found');
 
     //update the user's profile in the db using Prisma & passing the recieved profile form Data
-    await prisma.user.update({ where: { id: currentUser.id }, data: { name: user.name, } });
+    await prisma.user.update({ where: { id: currentUser.id }, data: { name: user.name, phone: user.phone || null } });
     return { success: true, message: 'User updated successfully', };                  //return success message
   } catch {
     return { success: false, message: 'Failed to update profile info, try again later'  };     //return error message
@@ -220,10 +236,11 @@ export async function deleteUser(id: string) {
 
 
 
-// Update user by ID server-action, recieves the form data & update use's data with it
+// Update user by ID server-action (Admin), recieves the form data & update use's data with it
 export async function updateUser(user: updateUserType) {
   try {
-    await prisma.user.update({ where: { id: user.id }, data: { name: user.name, role: user.role } });  //update user data in the DB by id
+    //update user data in the DB by the id
+    await prisma.user.update({ where: { id: user.id }, data: { name: user.name, role: user.role, phone: user.phone } });  
     revalidatePath('/admin/users');                                      //Revalidate admin users page to get fresh data
     return { success: true, message: 'User updated successfully' };      //if success, return success message
   } catch {

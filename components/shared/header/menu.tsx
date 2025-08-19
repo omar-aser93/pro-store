@@ -19,8 +19,15 @@ const Menu = async () => {
   const cart = await getMyCart();    // Get user's cart server-action      
   // Count items (map through received items to get its ids, new Set([...] is data structure that only stores unique values, Array.from(...) to convert the Set back into an array ))
   const itemCount = cart ? Array.from(new Set(cart.items.map(item => item.productId))) : []; 
+
+  //Array of objects for admin pages title & link
+  const links = [
+    { title: 'Overview', href: '/admin/overview' }, { title: 'Products', href: '/admin/products'}, { title: 'Orders', href: '/admin/orders' }, 
+    { title: 'Users', href: '/admin/users' }, { title: 'Newsletter', href: '/admin/newsletter' }, { title: 'Chats', href: '/admin/chats' }
+  ]; 
  
   const session = await auth();         // get the current user's session 
+
   return (
       <>
       <div className='flex justify-end gap-3'>
@@ -40,6 +47,7 @@ const Menu = async () => {
           <LanguageSwitcher />    {/* LanguageSwitcher component */}
           <UserButton />          {/* UserButton component, for sign in & sign out links */}
         </nav>
+
         {/* shadcn sheet/Sidebar for sm screens */}
         <nav className='md:hidden'>
           <Sheet>
@@ -62,6 +70,17 @@ const Menu = async () => {
                 </Button>
                 <LanguageSwitcher />      {/* LanguageSwitcher component */}
                 <UserButton />            {/* UserButton component, for sign in & sign out links */}
+
+                {/* Admin menu links, only visible if the user is an admin */}
+                {session?.user?.role === 'admin' && <div className='w-full flex flex-col justify-start mt-4 gap-4'>
+                  <hr />
+                  {/* map over the links array and render each link, change link style if the current pathname includes the link href */}    
+                  {links.map((item) => (
+                    <Link key={item.href} href={item.href}  className='text-md font-medium transition-colors hover:text-primary'>
+                      {item.title}
+                    </Link>
+                  ))}
+                </div>}
               </div>
               <SheetDescription></SheetDescription>
             </SheetContent>

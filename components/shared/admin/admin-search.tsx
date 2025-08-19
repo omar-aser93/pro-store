@@ -13,10 +13,11 @@ const AdminSearch = () => {
   const [queryValue, setQueryValue] = useState(searchParams.get('query') || '');    //state to store the search query value
   const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);         // Ref to store debounce timer
 
-  //check if the current pathname startsWith '/admin/orders' or '/admin/users' or '/admin/newsletter' or '/admin/products'
+  //check if the current pathname startsWith '/admin/orders' or '/admin/users' or '/admin/newsletter' or '/admin/chats' or '/admin/products'
   const basePaths = pathname.startsWith('/admin/orders') ? '/admin/orders' 
                     : pathname.startsWith('/admin/users') ? '/admin/users' 
-                    : pathname.startsWith('/admin/newsletter') ? '/admin/newsletter' : '/admin/products' ;
+                    : pathname.startsWith('/admin/newsletter') ? '/admin/newsletter' 
+                    : pathname.startsWith('/admin/chats') ? '/admin/chats' : '/admin/products' ;
 
   // function to handle search input with debounce (updates URL after user stops typing for 300ms)
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => { 

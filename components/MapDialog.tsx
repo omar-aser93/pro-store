@@ -25,9 +25,8 @@ L.Icon.Default.mergeOptions({
 // SearchControl function (subComponent) to add a searchbar functionality
 function SearchControl({ onResult }: { onResult: (latlng: [number, number]) => void }) {
   const map = useMapEvents({});                   // useMap hook to access the map instance
-  useEffect(() => {
-    const provider = new OpenStreetMapProvider();
-    const searchControl = new (GeoSearchControl as any)({ provider, showMarker: true, autoClose: true, retainZoomLevel: false });
+  useEffect(() => {    
+    const searchControl = new (GeoSearchControl as any)({ provider: new OpenStreetMapProvider(), showMarker: true, autoClose: true, retainZoomLevel: false });
     map.addControl(searchControl);
     map.on('geosearch/showlocation', (result: any) => { const { x, y } = result.location; onResult([y, x]); });
 
@@ -38,10 +37,8 @@ function SearchControl({ onResult }: { onResult: (latlng: [number, number]) => v
 }
 
 // LocationPicker function (subComponent) to handle map clicks and set coordinates
-function LocationPicker({ setLatlng }: { setLatlng: (coords: [number, number]) => void }) {
-  useMapEvents({
-    click(e) { setLatlng([e.latlng.lat, e.latlng.lng]); },
-  });
+function LocationPicker({ setLatlng }: { setLatlng: (coords: [number, number]) => void }) { 
+  useMapEvents({ click: (e) => setLatlng([e.latlng.lat, e.latlng.lng]) });
   return null;
 }
 
@@ -62,12 +59,14 @@ const MapDialog = ({ open, onClose, onConfirm }: { open: boolean; onClose: () =>
       const res = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${coords[0]}&lon=${coords[1]}&format=json`);
       const data = await res.json();
       const { address } = data;
+      console.log('Fetched address:', address);  
       // Update address state with the fetched data
-      setAddress({ streetAddress: address.road || '', city: address.city || address.town || address.village || '', country: address.country || '', postalCode: address.postcode || '' });
+      setAddress({ streetAddress: `${address.house_number || ''} - ${address.road || ''}` || '', city: address.city || address.town || address.village || address.neighbourhood || '', country: address.country || '', postalCode: address.postcode || '' });
     } catch (error) {
       console.error('Reverse geocoding failed:', error);            // Handle error 
     }
   };
+  
 
   // Effect to handle geolocation when the dialog opens
   useEffect(() => {
@@ -81,7 +80,7 @@ const MapDialog = ({ open, onClose, onConfirm }: { open: boolean; onClose: () =>
             const coords: [number, number] = [ position.coords.latitude, position.coords.longitude ];
             setLatlng(coords);                // Set the coordinates state with the fetched position
             fetchAddress(coords);             // call the Fetch address function and pass the coordinates
-            setLoading(false);                 // Set loading state to false after it
+            setLoading(false);                // Set loading state to false after it
           },
           // If geolocation permission fails / not supported in browser, fallback to a default location
           (error) => {
@@ -141,7 +140,7 @@ const MapDialog = ({ open, onClose, onConfirm }: { open: boolean; onClose: () =>
               <div>📍 Street: {address.streetAddress}</div>
               <div>🏙️ City: {address.city}</div>
               <div>🌍 Country: {address.country}</div>
-              <div>📮 Postal Code: {address.postalCode}</div>
+              <div>📮 Postal Code: {address.postalCode}</div>              
             </div>
 
             {/* Confirm and Cancel buttons */}
@@ -157,3 +156,4 @@ const MapDialog = ({ open, onClose, onConfirm }: { open: boolean; onClose: () =>
 };
 
 export default MapDialog;
+

@@ -60,6 +60,18 @@ const UserForm = ({ user }: {  user: updateUserType }) => {
             </FormItem> )}
           />  
         </div>   
+        {/* Phone */}
+        <div>
+          <FormField control={form.control} name='phone' render={({ field }: { field: ControllerRenderProps<updateUserType, 'phone'> }) => (
+            <FormItem className='w-full'>
+              <FormLabel>Phone</FormLabel>
+              <FormControl>
+                <Input placeholder='Enter user phone' {...field} value={field.value ?? ''}/>
+              </FormControl>
+              <FormMessage />
+            </FormItem> )}
+          />  
+        </div>
         {/* Role select */} 
         <div>
           <FormField control={form.control} name='role' render={({ field }: { field: ControllerRenderProps<updateUserType, 'role'> }) => (

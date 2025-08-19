@@ -41,6 +41,7 @@ const UsersPage = async (props: {searchParams: Promise<{ query: string; page: st
               <TableHead className='rtl:text-right'>ID</TableHead>
               <TableHead className='rtl:text-right'>NAME</TableHead>
               <TableHead className='rtl:text-right'>EMAIL</TableHead>
+              <TableHead className='rtl:text-right'>PHONE</TableHead>
               <TableHead className='rtl:text-right'>ROLE</TableHead>
               <TableHead className='text-center w-[100px]'>ACTIONS</TableHead>
             </TableRow>
@@ -52,6 +53,7 @@ const UsersPage = async (props: {searchParams: Promise<{ query: string; page: st
                 <TableCell>{formatId(user.id)}</TableCell>
                 <TableCell>{user.name}</TableCell>
                 <TableCell>{user.email}</TableCell>
+                <TableCell>{user.phone}</TableCell>
                 <TableCell>{user.role}</TableCell>
                 <TableCell className='flex gap-1 '>
                   {/* Edit user Link */}

@@ -1,10 +1,31 @@
 {
   "Home": {
-    "title": "Welcome to our app",
-    "description": "This is a sample application"
+    "title": "Welcome to our app",    
+    "products-link": "View All Products",
+    "newest-arrivals": "Newest Arrivals",
+    "no-products": "No products found",
+    "free-shipping": "Free Shipping",
+    "free-shipping-desc": "Free shipping for order above $100",
+    "money-back": "Money Back Guarantee",
+    "money-back-desc": "Within 30 days for an exchange",
+    "flexible-payment": "Flexible Payment",
+    "flexible-payment-desc": "Pay via credit card, PayPal, or cash on delivery",
+    "support": "24/7 Support",
+    "support-desc": "Get support at any time",
+    "subscribe": "Subscribe to our newsletter",
+    "subscribe-desc": "Get the latest news and updates on our products and special offers",
+    "subscribe-btn": "Subscribe",
+    "subscribe-btn-active": "Subscribing..."
   },
-  "Auth": {
-    "signIn": "Sign In",
-    "signUp": "Sign Up"
+  "Header": {
+    "signIn": "Sign In",    
+    "cart": "Cart",
+    "profile": "User Profile",
+    "history": "Order History",
+    "wishlist": "Wishlist",
+    "logout": "Sign Out"
+  },  
+  "Footer": {
+    "rights": "All rights reserved."
   }
 }

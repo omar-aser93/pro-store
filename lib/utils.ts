@@ -9,7 +9,7 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 
-// convertToPlainObject function - to convert Prisma objects to plain objects (used at fetching data & fixes a Prisma object issue)
+// convertToPlainObject function - to convert Prisma JSON objects to plain objects (used at fetching data & fixes a Prisma object issue)
 export function convertToPlainObject<T>(value: T): T {
   return JSON.parse(JSON.stringify(value));
 }
@@ -95,3 +95,14 @@ export const formatDateTime = (dateString: Date) => {
   return { dateTime: formattedDateTime, dateOnly: formattedDate, timeOnly: formattedTime };
 };
 
+
+// format a JS Date (UTC) into Local Date-Time value acceptable for <input type="datetime-local" />
+export const formatDateTimeInput = (date: Date) => {
+  const pad = (n: number) => n.toString().padStart(2, "0");
+  const year = date.getFullYear();
+  const month = pad(date.getMonth() + 1);
+  const day = pad(date.getDate());
+  const hours = pad(date.getHours());
+  const minutes = pad(date.getMinutes());
+  return `${year}-${month}-${day}T${hours}:${minutes}`;
+};

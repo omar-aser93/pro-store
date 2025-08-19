@@ -17,7 +17,7 @@ import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 // Dynamically import MapDialog with ssr: false to prevent SSR issues with the map dialog component
 import dynamic from 'next/dynamic'; 
-const MapDialog = dynamic(() => import('@/components/MapDialog'), { ssr: false, loading: () => <p>Loading map...</p>});
+const MapDialog = dynamic(() => import('@/components/MapDialog'), { ssr: false, loading: () => <p>...</p>});
 
 
 //shipping address form component, we will use shadcn Form  .. we recieve the address prop 
