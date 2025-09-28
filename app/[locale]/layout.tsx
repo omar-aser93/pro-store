@@ -3,12 +3,19 @@ import { NextIntlClientProvider } from 'next-intl';    //next-intl lib Provider 
 import { ThemeProvider } from 'next-themes';           //next-themes lib for light/dark mode, we wrap the provider around the children 
 import { Toaster } from '@/components/ui/toaster';     //shadcn Toaster, we add it under the children 
 import GuestCartId from "@/components/guestCartId";    //component we created that manages (guest cart id) cookie
+//PWA components
+import ServiceWorkerRegister from '@/components/service-worker-register';
+import PWAInstallPrompt from '@/components/pwa-install-prompt';
 
 // we get metadata from .env (optional), %s auto replaces the default title with specific page meta title, ex: Home | Prostore
 export const metadata: Metadata = {
   title: {template: `%s | ${process.env.NEXT_PUBLIC_APP_NAME}`,  default: process.env.NEXT_PUBLIC_APP_NAME ?? 'Prostore',},
   description: process.env.NEXT_PUBLIC_APP_DESCRIPTION,
   metadataBase: new URL(process.env.NEXT_PUBLIC_SERVER_URL ?? 'http://localhost:3000'),
+  // PWA Metadata  
+  manifest: '/manifest.webmanifest',
+  icons: { icon: '/icons/icon-192.png', apple: '/icons/icon-512.png'},
+  other: {'apple-mobile-web-app-capable': 'yes', 'apple-mobile-web-app-status-bar-style': 'default', 'apple-mobile-web-app-title': process.env.NEXT_PUBLIC_APP_NAME ?? 'Prostore'}
 };
 
 
@@ -27,6 +34,8 @@ export default async function LocaleLayout({ children, params }: { children: Rea
           <GuestCartId />           {/* When a user visits the website, this component will create [a guest cart_id cookie] used to allow guests to add items to a cart without being logged in */}
           {children}
           <Toaster />               {/* shadcn Toaster */}
+          <ServiceWorkerRegister /> {/* PWA Service Worker Register */}
+          <PWAInstallPrompt />      {/* PWA Install Prompt component */}
         </ThemeProvider>
       </NextIntlClientProvider>
     </div>

@@ -10,8 +10,8 @@ import { Prisma } from '@prisma/client';
 // Get the latest products server-action (used in Home page)
 export async function getLatestProducts() {    
   // Get the latest 4 products from the DB, ordered by creation date in descending order
-  const data = await prisma.product.findMany({ take: 4, orderBy: { createdAt: 'desc' } });
-  return convertToPlainObject(data);                  //res with an array of the products
+  const data = await prisma.product.findMany({ take: 4, orderBy: { createdAt: 'desc' } });  
+    return convertToPlainObject(data);                  //res with an array of the products                
 }
 
 
@@ -27,7 +27,8 @@ export async function getFeaturedProducts() {
 
 // Get single product by it's slug server-action, used in Product-Details page (slug is unique similar to id but text & more SEO friendly)
 export async function getProductBySlug(slug: string) {
-  return await prisma.product.findFirst({ where: { slug: slug } });
+  const data = await prisma.product.findFirst({ where: { slug: slug } });
+  return convertToPlainObject(data);
 }
 
 
@@ -36,6 +37,45 @@ export async function getProductBySlug(slug: string) {
 export async function getProductById(productId: string) {
   const data = await prisma.product.findFirst({ where: { id: productId } });
   return convertToPlainObject(data);
+}
+
+
+
+// Get related products by id server-action, receives the product id 
+export async function getRelatedProducts(productId: string) {
+  // first get the product by id, if not found return empty array
+  const product = await prisma.product.findFirst({  where: { id: productId } });
+  if (!product) return [];
+
+  // variable to collect related products here
+  const related: Product[] = [];
+
+  // 1st: try to (get max 6 items) related by [category + brand] and exclude the current product 
+  const catBrand = await prisma.product.findMany({
+    where: { id: { not: productId }, category: product.category, brand: product.brand },
+    take: 6,
+  });
+  related.push(...catBrand);            // push to the related products array
+
+  // 2nd: if still less than 6, try to get related by brand (different category) and exclude already collected product IDs
+  if (related.length < 6) {
+    const brandOnly = await prisma.product.findMany({
+      where: { id: { not: productId }, brand: product.brand, NOT: { id: { in: related.map((p) => p.id) }} },
+      take: 6 - related.length,
+    });
+    related.push(...brandOnly);        // push to the related products array
+  }
+
+  // 3th: if still less than 6, try to get related by category (different brand) and exclude already collected product IDs
+  if (related.length < 6) {
+    const categoryOnly = await prisma.product.findMany({
+      where: { id: { not: productId }, category: product.category, NOT: { id: { in: related.map((p) => p.id) }} },
+      take: 6 - related.length,
+    });
+    related.push(...categoryOnly);    // push to the related products array
+  }
+   
+  return convertToPlainObject(related);         // res with an array of the related products (max 6 items)
 }
 
 
@@ -60,7 +100,7 @@ export async function getAllProducts({query, limit = Number(process.env.NEXT_PUB
   const data = await prisma.product.findMany({
     //Apply the filters + Apply sorting based on the received sort query (lowest, highest, rating, newest) 
     where: { ...queryFilter, ...categoryFilter, ...priceFilter, ...ratingFilter },    
-    orderBy: sort === 'lowest' ? { price: 'asc' } : sort === 'highest' ? { price: 'desc' } : sort === 'rating' ? { rating: 'desc' } : { createdAt: 'desc' },                
+    orderBy: sort === 'lowest' ? { price: 'asc' } : sort === 'highest' ? { price: 'desc' } : sort === 'rating' || sort === 'rating-desc' ? { rating: 'desc' } : sort === 'rating-asc' ? { rating: 'asc' } : { createdAt: 'desc' },
     skip: (page - 1) * limit,                       //paginate the data, skip (page number) * (items per page)
     take: limit,                                    //take the limit (items per page)
   });
@@ -76,7 +116,7 @@ export async function getAllProducts({query, limit = Number(process.env.NEXT_PUB
 export async function getAllCategories() {
   //group the products by category field and count the number of products in each category
   const data = await prisma.product.groupBy({ by: ['category'], _count: true });     
-  return data;
+  return convertToPlainObject(data);                  //res with an array of the products
 }
 
 
@@ -157,4 +197,30 @@ export async function createDeal(data: DealFormType) {
       data: { titles: parsed.titles, descriptions: parsed.descriptions, imageUrl: parsed.imageUrl, imageLink: parsed.imageLink, buttonLink: parsed.buttonLink, targetDate: parsed.targetDate }
     });
   }
+}
+
+
+
+// bulk delete products server-action [admin table checkboxs], receives formData
+export async function bulkDeleteProducts(formData: FormData) {
+  try {    
+    //delete the products from the DB by ids (from formData getAll method)
+    await prisma.product.deleteMany({ where: { id: { in: formData.getAll("ids") as string[] } }});
+    revalidatePath('/admin/products');               //Revalidate admin products page to get fresh data
+  } catch  {
+    throw new Error('Failed to delete products, try again later');
+  } 
+}
+
+
+
+// Get search suggestions server-action, receives the search query + optional category
+export async function getSearchSuggestions(query: string, category?: string) {
+  // find products by name — filter by category if provided
+  const data = await prisma.product.findMany({
+    where: { name: { contains: query, mode: 'insensitive' }, ...(category && category !== 'all' ? { category } : {}) },
+    take: 5,
+    select: { id: true, slug: true, name: true, images: true },
+  })
+  return convertToPlainObject(data);                  //res with an array of the products
 }

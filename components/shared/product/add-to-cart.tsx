@@ -43,7 +43,8 @@ const AddToCart = ({ cart, item }: { cart: Cart | undefined; item: cartItemType;
   //handleRemoveFromCart function, called when the Remove button is clicked
   const handleRemoveFromCart = async () => {
     startTransition(async () => { 
-      const res = await removeItemFromCart(item.productId);    //Execute removeItemFromCart server-action & pass the product ID
+      //Execute removeItemFromCart server-action... pass the product ID + (color & size - to identify a specific variant)
+      const res = await removeItemFromCart(item.productId, item.color!, item.size!);    
       // if not successful, Display error toast message (coming from the server-action)
       toast({ variant: res.success ? 'default' : 'destructive', description: res.message });
       return;   //return out to stop the function
@@ -52,7 +53,7 @@ const AddToCart = ({ cart, item }: { cart: Cart | undefined; item: cartItemType;
 
 
   //check if item exists in the cart
-  const existItem = cart && cart.items.find((x) => x.productId === item.productId); 
+  const existItem = cart && cart.items.find((x) => x.productId === item.productId && x.color === item.color && x.size === item.size); 
 
   //if item exists in the cart, render Add/Remove buttons with onClick event handler, if not render only the Add button 
   return existItem ? (

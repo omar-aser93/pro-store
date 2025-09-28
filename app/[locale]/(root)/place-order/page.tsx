@@ -79,21 +79,28 @@ const placeOrderPage = async () => {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Item</TableHead>
-                    <TableHead>Quantity</TableHead>
-                    <TableHead>Price</TableHead>
+                    <TableHead className='rtl:text-right'>Item</TableHead>
+                    <TableHead className='rtl:text-right'>Color/Size Options</TableHead>
+                    <TableHead className='rtl:text-right'>Quantity</TableHead>
+                    <TableHead className='text-right'>Price</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {/* map through cart items, display image, name, price and qty */}
                   {cart.items.map((item) => (
-                    <TableRow key={item.slug}>
+                    <TableRow key={`${item.slug}-${item.color!}-${item.size!}`}>
                       <TableCell>
                         <Link href={`/product/${item.slug}`} className='flex items-center' >
                           <Image src={item.image} alt={item.name} width={50} height={50} ></Image>
                           <span className='px-2'>{item.name}</span>
                         </Link>
                       </TableCell>
+                      {item.color ? <TableCell >
+                        <div className='flex items-center gap-3'>
+                          <div style={{ backgroundColor: item.color! }} className="w-5 h-5 rounded-full" /> 
+                          <div>{item.size}</div>
+                        </div>
+                      </TableCell> : <TableCell>-</TableCell> }
                       <TableCell> <span className='px-2'>{item.qty}</span> </TableCell>
                       <TableCell className='text-right'> ${item.price} </TableCell>
                     </TableRow>

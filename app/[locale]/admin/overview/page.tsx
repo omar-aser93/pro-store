@@ -1,6 +1,7 @@
 import { Metadata } from 'next';
 import Link from 'next/link';
 import Charts from './charts';
+import AdminCalendar from './admin-calendar';
 import { getOrderSummary } from '@/lib/actions/order.actions';
 import { formatCurrency, formatDateTime, formatNumber } from '@/lib/utils';
 import { BadgeDollarSign, Barcode, CreditCard, Users } from 'lucide-react';      //icons lib auto installed with shadcn
@@ -111,6 +112,12 @@ const AdminOverviewPage = async () => {
             </Table>
           </CardContent>
         </Card>
+      </div>
+
+      {/* Admin Calendar Component */}
+      <div className="py-8 dark:text-slate-700">
+        <h2 className="text-2xl font-bold mb-1">Activity Calendar</h2>
+        <AdminCalendar />
       </div>
 
     </div>

@@ -3,11 +3,11 @@ import Link from 'next/link';
 import Menu from './menu';
 import CategoriesDrawer from './categories-drawer';
 import Search from './search';
-
+import { getAllCategories } from '@/lib/actions/product.actions';
 
 //Header & nav component: contains logo , Search component & Menu component
-const Header = () => {
-  
+const Header = async () => {
+  const categories = await getAllCategories();         //get all categories server-action, to pass it to Search component
   return (
     <header className='w-full border-b'>
       <div className='wrapper flex-between'>        
@@ -21,7 +21,7 @@ const Header = () => {
           </Link>
         </div>          
         {/* Search component, hidden on small screens & we will set it in the side drawer instead */}
-        <div className='hidden md:block'> <Search /> </div>
+        <div className='hidden md:block'> <Search categories={categories} /> </div>
         {/* Menu component */}
         <Menu />
       </div>

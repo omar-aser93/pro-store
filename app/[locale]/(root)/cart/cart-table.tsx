@@ -14,6 +14,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
 
+// CartTable component, receives the cart as a prop
 const CartTable = ({ cart }: { cart?: Cart }) => {
 
   const router = useRouter();                    //useRouter hook to navigate to a page
@@ -33,7 +34,8 @@ const CartTable = ({ cart }: { cart?: Cart }) => {
             {/* table Header */}
             <TableHeader>
               <TableRow>
-                <TableHead>Item</TableHead>
+                <TableHead className='rtl:text-right'>Item</TableHead>
+                <TableHead className='text-center'>Color/Size Options</TableHead>
                 <TableHead className='text-center'>Quantity</TableHead>
                 <TableHead className='text-right'>Price</TableHead>
               </TableRow>
@@ -42,17 +44,23 @@ const CartTable = ({ cart }: { cart?: Cart }) => {
             <TableBody>
               {/*map through cart items, display image, name, price, qty and buttons to remove/add items */}  
               {cart.items.map((item) => (
-                <TableRow key={item.slug}>
+                <TableRow key={`${item.slug}-${item.color!}-${item.size!}`}>
                   <TableCell>
                     <Link href={`/product/${item.slug}`} className='flex items-center' >
                       <Image src={item.image} alt={item.name} width={50} height={50} />
                       <span className='px-2'>{item.name}</span>
                     </Link>
                   </TableCell>
+                  {item.color ? <TableCell >
+                    <div className='flex items-center justify-center gap-3'>
+                      <div style={{ backgroundColor: item.color! }} className="w-5 h-5 rounded-full" /> 
+                      <div>{item.size}</div>
+                    </div>
+                  </TableCell> : <TableCell className='text-center'>-</TableCell> }
                   <TableCell className='flex-center gap-2'>
                     <Button disabled={isPending} variant='outline' type='button'
                         onClick={() => startTransition(async () => {
-                            const res = await removeItemFromCart(item.productId);
+                            const res = await removeItemFromCart(item.productId, item.color!, item.size!);
                             if (!res.success) { toast({ variant: 'destructive', description: res.message }) }
                           })
                         }>

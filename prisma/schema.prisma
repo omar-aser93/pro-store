@@ -2,8 +2,7 @@
 //for SQL DBs, we use migrate to create the tables, 1st (npx prisma migrate dev --name init) to create the migration file *change init to any name*, then (npx prisma generate) after every change in this file, we check changes using (npx prisma studio)
 //User-Related Models: User, Account, Session, VerificationToken .. are based on the NextAuth.js schema (https://authjs.dev/getting-started/adapters/prisma)
 generator client {
-  provider        = "prisma-client-js"
-  previewFeatures = ["driverAdapters"]
+  provider        = "prisma-client-js"   
 }
 
 datasource db {
@@ -28,9 +27,10 @@ model Product {
   price       Decimal     @default(0) @db.Decimal(12, 2)
   rating      Decimal     @default(0) @db.Decimal(3, 2)
   numReviews  Int         @default(0)
-  isFeatured  Boolean     @default(false)   //`@default()` - Specifies a default value for a field when a new record is created & no value is explicitly provided.
-  banner      String?
-  createdAt   DateTime    @default(now()) @db.Timestamp(6)   //6 digits of Milliseconds - more precision than the default 3 digits
+  isFeatured  Boolean     @default(false)   //`@default()` - Specifies a default value for a field when a new record is created & when no value is explicitly provided.
+  banner      String?  
+  colors      Json        @default("[]")  @db.Json           // array of (Product-Color) objects stored as JSON {name, images["img1", "img2"], sizes[{size:,stock:},{size:,stock:},...]}
+  createdAt   DateTime    @default(now()) @db.Timestamp(6)   //6 digits of Milliseconds - more precision than the default 3 digits 
   OrderItem   OrderItem[]         //relation with OrderItem model
   Review      Review[]            //relation with Review model
   wishlist    Wishlist[]          //relation with Wishlist
@@ -155,6 +155,8 @@ model Order {
 
 //OrderItem model (info of each item in the order - separate table from Order to make it flexible and easier to update single item, also to avoid data duplication of product info)
 model OrderItem {
+  //`@id` - Marks field as a primary key of the table in the db, `@default(dbgenerated("gen_random_uuid()"))` - generates a random uuid for the id field
+  id        String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   orderId   String  @db.Uuid    // a foreign key
   productId String  @db.Uuid    // a foreign key
   qty       Int
@@ -162,12 +164,14 @@ model OrderItem {
   name      String
   slug      String
   image     String
+  size      String?             
+  color     String?
   //relation to Order model: OrderItem model (orderId) field will reference to Order model (id) field , onDelete: Cascade - if an order is deleted, all the orderItems associated with that order will also be deleted
   order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
   //relation to Product model: OrderItem model (productId) field will reference to Product model (id) field , onDelete: Cascade - if a product is deleted, all the orderItems associated with that product will also be deleted
   product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
-  //composite primary key for OrderItem model. It is made up of the `orderId` and `productId` fields
-  @@id([orderId, productId], map: "orderItems_orderId_productId_pk")
+  // @@unique composite unique constraint to prevent duplicate entries for the same product with same size & color in a single order
+  @@unique([orderId, productId, size, color], map: "orderItems_variant_unique")
 }
 
 

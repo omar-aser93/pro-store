@@ -5,7 +5,7 @@ import { revalidatePath } from 'next/cache';            //used to revalidate the
 import { auth } from '@/auth';
 import { getMyCart } from './cart.actions';
 import { getUserById } from './user.actions';
-import { cartItemType, insertOrderSchema, paymentResultType, shippingAddressType } from '../validator';      //import zod Schemas/types from validator.ts
+import { calendarSummarySchema, CalendarSummaryType, cartItemType, insertOrderSchema, paymentResultType, shippingAddressType } from '../validator';      //import zod Schemas/types from validator.ts
 import { prisma } from '@/db/prisma';
 import { convertToPlainObject } from '../utils';           //utility function to convert Prisma objects to plain js objects
 import { paypal } from '../paypal';
@@ -20,10 +20,34 @@ export async function updateOrderToPaid({ orderId, paymentResult }: { orderId: s
   const order = await prisma.order.findFirst({ where: { id: orderId }, include: { orderItems: true } });
   if (!order) throw new Error('Order not found');
   if (order.isPaid) throw new Error('Order is already paid');
+
   // Create a prisma transaction to update the order and update products stock quantities (transaction is a way to ensure all operations are completed successfully or none of them are completed &  DB is left the same as before the transaction started)
   await prisma.$transaction(async (tx) => {
     // 1st: Update each item's stock quantities in the database
-    for (const item of order.orderItems) { await tx.product.update({ where: { id: item.productId }, data: { stock: { increment: -item.qty }} }); }
+    for (const item of order.orderItems) { 
+      // Get the product by id, if not found throw an error
+      const product = await tx.product.findFirst({ where: { id: item.productId } });
+      if (!product) throw new Error("Product not found");
+      // Get the variant stock if the item has color & size (the item is a variant)
+      let colors = (product.colors as { name: string; sizes: { size: string; stock: number }[] }[]) || [];
+
+      // If the item has color & size (is a variant), check & update the specific variant stock, otherwise, update the main product stock
+      if (item.color && item.size) {       
+        colors = colors.map((c) => 
+          c.name === item.color ? { ...c, sizes: c.sizes.map((s) => {
+            if (s.size === item.size) {
+              if (s.stock < item.qty) throw new Error(`Not enough stock for this variant (${item.color} - ${item.size})`);
+              return { ...s, stock: s.stock - item.qty };
+            }
+            return s;
+          })} : c
+        );
+        await tx.product.update({ where: { id: product.id }, data: { colors, stock: { decrement: item.qty } } });
+      } else {
+        if (product.stock < item.qty) throw new Error("Not enough stock");
+        await tx.product.update({ where: { id: product.id }, data: { stock: { decrement: item.qty } } });
+      }
+    }
     // 2nd: update the order in the database, by Setting isPaid to true
     await tx.order.update({ where: { id: orderId }, data: { isPaid: true, paidAt: new Date(), paymentResult } });
   });
@@ -31,7 +55,7 @@ export async function updateOrderToPaid({ orderId, paymentResult }: { orderId: s
   const updatedOrder = await prisma.order.findFirst({ where: { id: orderId }, include: { orderItems: true, user: { select: { name: true, email: true }} } });
   if (!updatedOrder) { throw new Error('Order not found'); }
   // Send the purchase receipt email with the updated order, shippingAddress/paymentResult have a specific types so we cast them to their type to avoid TS error
-  sendPurchaseReceipt({ order: {...updatedOrder, shippingAddress: updatedOrder?.shippingAddress as  shippingAddressType, paymentResult: updatedOrder?.paymentResult as paymentResultType }});  
+  sendPurchaseReceipt({ order: {...updatedOrder, shippingAddress: updatedOrder?.shippingAddress as shippingAddressType, paymentResult: updatedOrder?.paymentResult as paymentResultType }});  
 };
 
 
@@ -289,4 +313,60 @@ export async function deleteOrder(id: string) {
   } catch {
     return { success: false, message: "Failed to delete order, try again later" };    //if error res with error message
   }
+}
+
+
+
+// Get Calendar Summary server-action, receives month to get orders & products for that month
+export async function getCalendarSummary(input: CalendarSummaryType) {
+  //parse the calendar received input data using zod schema
+  const { startDate, endDate } = calendarSummarySchema.parse(input);
+
+  // Create Date objects for the month's start and end dates
+  const start = new Date(`${startDate}T00:00:00.000Z`);
+  const end = new Date(`${endDate}T23:59:59.999Z`);
+
+  // Fetch products added in range (the start & end dates)
+  const products = await prisma.product.findMany({
+    where: { createdAt: { gte: start, lte: end } },
+    select: { id: true, name: true, createdAt: true, },
+    orderBy: { createdAt: "asc" },
+  });
+
+  // Fetch orders created in range (the start & end dates)
+  const orders = await prisma.order.findMany({
+    where: { createdAt: { gte: start, lte: end } },    
+    select: { id: true, createdAt: true, isPaid: true, isDelivered: true, totalPrice: true },
+    orderBy: { createdAt: "asc" },
+  });
+
+  // Group results by date and convert Date objects to strings
+  const summary: Record<string,
+    { products: { id: string; name: string }[];
+      orders: { id: string; createdAt: string; isPaid: boolean; isDelivered: boolean; totalPrice: string; }[];
+    }> = {};
+
+  // Loop through products to group them by date
+  for (const product of products) {
+    const dateKey = product.createdAt.toISOString().split("T")[0];
+    if (!summary[dateKey]) summary[dateKey] = { products: [], orders: [] };
+    summary[dateKey].products.push({
+      id: product.id,
+      name: product.name,
+    });
+  }
+  // Loop through orders to group them by date
+  for (const order of orders) {
+    const dateKey = order.createdAt.toISOString().split("T")[0];
+    if (!summary[dateKey]) summary[dateKey] = { products: [], orders: [] };
+    summary[dateKey].orders.push({
+      id: order.id,
+      createdAt: order.createdAt.toISOString(), // Convert Date to string
+      isPaid: order.isPaid,
+      isDelivered: order.isDelivered,
+      totalPrice: order.totalPrice.toString(),
+    });
+  }
+
+  return summary;                    //return the summary
 }

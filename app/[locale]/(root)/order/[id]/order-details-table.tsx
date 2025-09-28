@@ -89,7 +89,7 @@ const OrderDetailsTable = ({isAdmin, order, paypalClientId}: { isAdmin: boolean;
             </TableHeader>
             <TableBody>
               {orderItems.map((item) => (
-              <TableRow key={item.slug}>
+              <TableRow key={`${item.slug}-${item.color!}-${item.size!}`}>
                 <TableCell>
                   <Link href={`/product/${item.slug}`} className='flex items-center' >
                     <Image src={item.image} alt={item.name} width={50} height={50} ></Image>

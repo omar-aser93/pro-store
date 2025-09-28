@@ -19,7 +19,7 @@ import { toast } from "@/hooks/use-toast";
 
 
 // DealEditor component, a Button that opens a modal form to create/edit deal
-export function DealEditor() {
+export default function DealEditor() {
 
   const [open, setOpen] = useState(false);                          // state to check if modal is open or closed
   //useTransition hooks to handle a pending state

@@ -18,7 +18,11 @@ export const insertProductSchema = z.object({
   images: z.array(z.string()).min(1, 'Product must have at least one image'),
   isFeatured: z.boolean(),
   banner: z.string().nullable(),         //nullable() to allow null values for (optional) fields
-  price: currency
+  price: currency,  
+  // colors is an array of objects, each object has name, images(array of strings), sizes(array of objects with size & stock)
+  colors: z.array(z.object({ name: z.string().min(1, "Color name required"), images: z.array(z.string()).min(1, "At least one image required"),
+    sizes: z.array(z.object({ size: z.enum(["XS", "S", "M", "L", "XL", "XXL", "XXXL"]), stock: z.number().min(0).default(0)})).default([]) })
+  ).default([])
 });
 //We use `z.infer` to create a product TS type & include all fields of the Schema + other fields not included in the form
 export type Product = z.infer<typeof insertProductSchema> & { 
@@ -113,6 +117,8 @@ export const cartItemSchema = z.object({
   slug: z.string().min(1, 'Slug is required'),
   qty: z.number().int().nonnegative('Quantity must be a non-negative number'),      //.nonnegative() to ensure it's a positive number
   image: z.string().min(1, 'Image is required'),
+  color: z.string().optional().nullable(),
+  size: z.string().optional().nullable(), 
   price: currency
 });
 //We use `z.infer` to create a cartItem TS type 
@@ -190,6 +196,8 @@ export const insertOrderItemSchema = z.object({
   name: z.string(),
   price: currency,
   qty: z.number(),
+  color: z.string().optional().nullable(),
+  size: z.string().optional().nullable(),
 });
 //We use `z.infer` to create an OrderItem TS type
 export type OrderItem = z.infer<typeof insertOrderItemSchema>;
@@ -299,3 +307,12 @@ export const chatSchema = z.object({
 });
 // We use `z.infer` to create a Chat TS type
 export type ChatType = z.infer<typeof chatSchema>;
+
+
+// Zod Schema for validating Calendar Summary (admin)
+export const calendarSummarySchema = z.object({
+  startDate: z.string(),
+  endDate: z.string(),
+});
+//We use `z.infer` to create a Calendar Summary TS type
+export type CalendarSummaryType = z.infer<typeof calendarSummarySchema>;

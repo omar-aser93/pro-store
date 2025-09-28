@@ -7,6 +7,7 @@ import UserButton from './user-button';
 import Search from './search';
 import AdminSearch from '@/components/shared/admin/admin-search';
 import { getMyCart } from '@/lib/actions/cart.actions';
+import { getAllCategories } from '@/lib/actions/product.actions';
 //shadcn Button & Sheet components
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger, SheetTitle, SheetDescription} from '@/components/ui/sheet';
@@ -17,8 +18,10 @@ import { Badge } from '@/components/ui/badge';
 const Menu = async () => {
  
   const cart = await getMyCart();    // Get user's cart server-action      
-  // Count items (map through received items to get its ids, new Set([...] is data structure that only stores unique values, Array.from(...) to convert the Set back into an array ))
-  const itemCount = cart ? Array.from(new Set(cart.items.map(item => item.productId))) : []; 
+  // Count items (map through received items to get its ids-sizes-colors, new Set([...] is data structure that only stores unique values, Array.from(...) to convert the Set back into an array ))
+  const itemCount = cart ? Array.from( new Set( cart.items.map(item => `${item.productId}-${item.size ?? 'null'}-${item.color ?? 'null'}` )) ): []; 
+
+  const categories = await getAllCategories();         //get all categories server-action, to pass it to Search component
 
   //Array of objects for admin pages title & link
   const links = [
@@ -54,7 +57,7 @@ const Menu = async () => {
             <SheetTrigger className='align-middle'> <EllipsisVertical /> </SheetTrigger>
             <SheetContent className='flex flex-col items-start'>
               <SheetTitle>Menu</SheetTitle>
-              <div className='my-4'> {session?.user?.role === 'admin' ? <AdminSearch /> : <Search />} </div>         {/* Search component */}
+              <div className='my-4'> {session?.user?.role === 'admin' ? <AdminSearch /> : <Search categories = {categories} />} </div>         {/* Search component */}
               <div className='flex justify-around items-center gap-2 w-full flex-wrap'>
                 <ModeToggle />                                 {/* Mode Toggle component */}
                 {/* cart link - asChild is used with shadcn components that have button/Link child as trigger */}
