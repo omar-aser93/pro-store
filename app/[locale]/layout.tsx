@@ -20,7 +20,7 @@ export const metadata: Metadata = {
 
 
 // LocaleLayout is the main layout for all pages, it wraps the children (their type - {children: React.ReactNode}) + gets i18n URL param
-export default async function LocaleLayout({ children, params }: { children: React.ReactNode; params: { locale: string }; }) {  
+export default async function LocaleLayout({ children, params }: { children: React.ReactNode; params: Promise<{ locale: string }>; }) {  
     
   // get current locale (language) from URL params & the messages (translation files)... pass them to the provider
   const { locale } = await params;                                           
