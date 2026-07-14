@@ -247,7 +247,7 @@ model Chat {
   id        String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   userId    String    @db.Uuid               // a foreign key
   //relation to User model: Chat model (userId) field will reference to User model (id) field , onDelete: Cascade - if a user is deleted, all the chats associated with that user will also be deleted
-  user      User      @relation(fields: [userId], references: [id])  
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)  
   messages  Message[]                       //relation with Message model
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
@@ -261,10 +261,10 @@ model Message {
   id        String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   chatId    String    @db.Uuid     // a foreign key
   //relation to Chat model: Message model (chatId) field will reference to Chat model (id) field , onDelete: Cascade - if a chat is deleted, all the messages associated with that chat will also be deleted
-  chat      Chat      @relation(fields: [chatId], references: [id])
+  chat      Chat      @relation(fields: [chatId], references: [id], onDelete: Cascade)
   senderId  String    @db.Uuid     // a foreign key
   //relation to User model: Message model (senderId) field will reference to User model (id) field , onDelete: Cascade - if a user is deleted, all the messages associated with that user will also be deleted
-  sender    User      @relation(fields: [senderId], references: [id])
+  sender    User      @relation(fields: [senderId], references: [id], onDelete: Cascade)
   content   String?
   fileUrl   String?
   fileType  String?                         // To distinguish between different file types
