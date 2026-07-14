@@ -12,7 +12,6 @@ interface NavigatorStandalone extends Navigator {
   standalone?: boolean;
 }
 
-
 // Detect iOS Safari
 function isIos() {
   return (
@@ -33,45 +32,63 @@ function isInStandaloneMode() {
 // Number of days to snooze after dismiss
 const DISMISS_SNOOZE_DAYS = 7;
 
+// Check if user is in snooze period
+function isInSnoozePeriod(): boolean {
+  const lastDismiss = localStorage.getItem('pwa-prompt-dismissed');
+  if (!lastDismiss) return false;
+  
+  const lastTime = parseInt(lastDismiss, 10);
+  const diffDays = (Date.now() - lastTime) / (1000 * 60 * 60 * 24);
+  return diffDays < DISMISS_SNOOZE_DAYS;
+}
+
 export default function PWAInstallPrompt() {
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [showInstallBanner, setShowInstallBanner] = useState(false);
   const [showIosBanner, setShowIosBanner] = useState(false);
 
   useEffect(() => {
-    // Check if recently dismissed
-    const lastDismiss = localStorage.getItem('pwa-prompt-dismissed');
-    if (lastDismiss) {
-      const lastTime = parseInt(lastDismiss, 10);
-      const diffDays = (Date.now() - lastTime) / (1000 * 60 * 60 * 24);
-      if (diffDays < DISMISS_SNOOZE_DAYS) {
-        // Still within snooze window
-        return;
-      }
+    // Check for snooze FIRST
+    if (isInSnoozePeriod()) {
+      console.log('In snooze period, not showing prompt');
+      return;
+    }
+
+    // Check if already installed
+    if (isInStandaloneMode()) {
+      console.log('Already installed, not showing prompt');
+      return;
     }
 
     // Handle Android/Chrome
     const handleBeforeInstallPrompt = (e: Event) => {
-    e.preventDefault();
-    setDeferredPrompt(e as BeforeInstallPromptEvent);
+      e.preventDefault();
+      const promptEvent = e as BeforeInstallPromptEvent;
+      setDeferredPrompt(promptEvent);
 
-    if (!isInStandaloneMode() && !isIos()) {
-        setTimeout(() => setShowInstallBanner(true), 3000);
-    }
+      // Check snooze again when the event fires (in case it fired after component mount)
+      if (!isInSnoozePeriod() && !isInStandaloneMode() && !isIos()) {
+        console.log('Showing install banner');
+        setShowInstallBanner(true);
+      }
     };
 
     // Handle installed
     const handleAppInstalled = () => {
       console.log('PWA installed');
       setShowInstallBanner(false);
+      setShowIosBanner(false);
       setDeferredPrompt(null);
+      // Clear snooze if they installed
+      localStorage.removeItem('pwa-prompt-dismissed');
     };
 
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
     window.addEventListener('appinstalled', handleAppInstalled);
 
-    // Handle iOS
-    if (isIos() && !isInStandaloneMode()) {
+    // Handle iOS - check snooze again
+    if (isIos() && !isInStandaloneMode() && !isInSnoozePeriod()) {
+      console.log('Showing iOS banner');
       setTimeout(() => setShowIosBanner(true), 3000);
     }
 
@@ -79,24 +96,30 @@ export default function PWAInstallPrompt() {
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
       window.removeEventListener('appinstalled', handleAppInstalled);
     };
-  }, []);
+  }, []); // Empty dependency array - runs once on mount
 
   const handleInstallClick = async () => {
     if (!deferredPrompt) return;
 
-    deferredPrompt.prompt();
-    const { outcome } = await deferredPrompt.userChoice;
+    try {
+      await deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
 
-    if (outcome === 'accepted') {
-      console.log('User accepted the install prompt');
-      setShowInstallBanner(false);
-    } else {
-      console.log('User dismissed the install prompt');
+      if (outcome === 'accepted') {
+        console.log('User accepted the install prompt');
+        setShowInstallBanner(false);
+        // Clear snooze if they installed
+        localStorage.removeItem('pwa-prompt-dismissed');
+      } else {
+        console.log('User dismissed the install prompt');
+        // Store dismissal time to snooze
+        localStorage.setItem('pwa-prompt-dismissed', Date.now().toString());
+      }
+    } catch (error) {
+      console.error('Error during install prompt:', error);
     }
 
     setDeferredPrompt(null);
-    // Store dismissal time to snooze
-    localStorage.setItem('pwa-prompt-dismissed', Date.now().toString());
   };
 
   const handleDismissClick = () => {
@@ -104,6 +127,7 @@ export default function PWAInstallPrompt() {
     setShowIosBanner(false);
     // Store dismissal time to snooze
     localStorage.setItem('pwa-prompt-dismissed', Date.now().toString());
+    console.log('Prompt dismissed, snoozed for', DISMISS_SNOOZE_DAYS, 'days');
   };
 
   // ✅ Android / Chrome banner
